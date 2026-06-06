@@ -16,14 +16,14 @@ const { authorize } = require('../middleware/role');
 router.use(protect);
 
 // Statistics endpoints (admin only) - must be before /:id
-router.get('/statistics', authorize('admin'), getStatistics);
-router.get('/daily-revenue', authorize('admin'), getDailyRevenue);
-router.get('/monthly-revenue', authorize('admin'), getMonthlyRevenue);
-router.get('/top-items', authorize('admin'), getTopMenuItems);
-router.get('/peak-hours', authorize('admin'), getPeakHours);
+router.get('/statistics', authorize('admin', 'manager', 'manager'), getStatistics);
+router.get('/daily-revenue', authorize('admin', 'manager', 'manager'), getDailyRevenue);
+router.get('/monthly-revenue', authorize('admin', 'manager', 'manager'), getMonthlyRevenue);
+router.get('/top-items', authorize('admin', 'manager', 'manager'), getTopMenuItems);
+router.get('/peak-hours', authorize('admin', 'manager', 'manager'), getPeakHours);
 
-router.get('/', authorize('admin', 'waiter', 'receptionist'), getInvoices);
-router.post('/', authorize('admin', 'waiter'), createInvoice);
-router.get('/:id', authorize('admin', 'waiter'), getInvoiceById);
+router.get('/', authorize('admin', 'manager', 'waiter', 'receptionist', 'cashier'), getInvoices);
+router.post('/', authorize('admin', 'manager', 'waiter', 'cashier'), createInvoice);
+router.get('/:id', authorize('admin', 'manager', 'waiter', 'cashier'), getInvoiceById);
 
 module.exports = router;

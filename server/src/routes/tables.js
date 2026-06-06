@@ -19,11 +19,11 @@ router.get('/:id', getTableById);
 router.put(
   '/:id/status',
   protect,
-  authorize('admin', 'waiter', 'receptionist'),
+  authorize('admin', 'manager', 'waiter', 'receptionist', 'cashier'),
   updateTableStatus
 );
-router.post('/', protect, authorize('admin'), createTable);
-router.put('/:id', protect, authorize('admin'), updateTable);
-router.delete('/:id', protect, authorize('admin'), deleteTable);
+router.post('/', protect, authorize('admin', 'manager', 'manager'), createTable);
+router.put('/:id', protect, authorize('admin', 'manager', 'manager'), updateTable);
+router.delete('/:id', protect, authorize('admin', 'manager', 'manager'), deleteTable);
 
 module.exports = router;

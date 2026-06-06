@@ -16,20 +16,20 @@ router.use(protect);
 
 router.get(
   '/',
-  authorize('admin', 'receptionist', 'waiter', 'customer'),
+  authorize('admin', 'manager', 'receptionist', 'waiter', 'customer'),
   getReservations
 );
 router.get(
   '/:id',
-  authorize('admin', 'receptionist', 'waiter', 'customer'),
+  authorize('admin', 'manager', 'receptionist', 'waiter', 'customer'),
   getReservationById
 );
 router.post('/', createReservation); // All authenticated users can book
-router.put('/:id/confirm', authorize('admin', 'receptionist'), confirmReservation);
+router.put('/:id/confirm', authorize('admin', 'manager', 'receptionist'), confirmReservation);
 router.put('/:id/cancel', cancelReservation); // customers cancel own, staff cancel any
 router.put(
   '/:id/status',
-  authorize('admin', 'receptionist'),
+  authorize('admin', 'manager', 'receptionist'),
   updateReservationStatus
 );
 

@@ -61,6 +61,22 @@ const USERS = [
     role: 'customer',
     isActive: true,
   },
+  {
+    name: 'Quan Ly Nha Hang',
+    email: 'manager@sakura-japan.com',
+    password: 'manager123',
+    phone: '0909999999',
+    role: 'manager',
+    isActive: true,
+  },
+  {
+    name: 'Thu Ngan',
+    email: 'cashier@sakura-japan.com',
+    password: 'cashier123',
+    phone: '0908888888',
+    role: 'cashier',
+    isActive: true,
+  },
 ];
 
 const TABLES = [
@@ -544,6 +560,8 @@ const seed = async () => {
     console.log('Receptionist: letan@sakura-japan.com   / letan123');
     console.log('Waiter     : phucvu@sakura-japan.com   / phucvu123');
     console.log('Chef       : bep@sakura-japan.com      / bep123');
+    console.log('Manager    : manager@sakura-japan.com   / manager123');
+    console.log('Cashier    : cashier@sakura-japan.com   / cashier123');
     console.log('Customer   : khach@gmail.com            / khach123');
     console.log('-------------------------');
     console.log('Seed completed successfully.');

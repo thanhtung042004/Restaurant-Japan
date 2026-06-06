@@ -15,9 +15,9 @@ const upload = require('../middleware/upload');
 router.get('/', getCategories);
 
 // Admin: see all categories including inactive
-router.get('/all', protect, authorize('admin'), getAllCategories);
-router.post('/', protect, authorize('admin'), upload.single('image'), createCategory);
-router.put('/:id', protect, authorize('admin'), upload.single('image'), updateCategory);
-router.delete('/:id', protect, authorize('admin'), deleteCategory);
+router.get('/all', protect, authorize('admin', 'manager', 'manager'), getAllCategories);
+router.post('/', protect, authorize('admin', 'manager', 'manager'), upload.single('image'), createCategory);
+router.put('/:id', protect, authorize('admin', 'manager', 'manager'), upload.single('image'), updateCategory);
+router.delete('/:id', protect, authorize('admin', 'manager', 'manager'), deleteCategory);
 
 module.exports = router;

@@ -14,7 +14,7 @@ router.use(protect);
 router.post('/food-suggestion', foodSuggestion);
 
 // Admin only: business analysis with real data
-router.post('/business-analysis', authorize('admin'), businessAnalysis);
+router.post('/business-analysis', authorize('admin', 'manager', 'manager'), businessAnalysis);
 
 // View chat history
 router.get('/history', getChatHistory);
