@@ -139,7 +139,7 @@ export default function ReceptionistDashboard({ socket }) {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center pb-4 border-b border-gold/10">
-        <h2 className="font-serif text-lg text-gold uppercase tracking-wider">Danh sach dat ban gan day</h2>
+        <h2 className="font-serif text-lg text-gold glow-text uppercase tracking-wider">Danh sach dat ban gan day</h2>
         <span className="text-[10px] text-muted uppercase tracking-widest">
           Che do giam sat thoi gian thuc hoat dong
         </span>
@@ -154,7 +154,7 @@ export default function ReceptionistDashboard({ socket }) {
           {reservations.map((res) => (
             <div 
               key={res._id}
-              className="border border-gold/10 p-5 bg-bg-2 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6"
+              className="glass-panel-luxury p-5 bg-bg-2 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6"
             >
               <div className="space-y-3 flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-3">
@@ -234,7 +234,7 @@ export default function ReceptionistDashboard({ socket }) {
             className="w-full max-w-md p-8 border border-gold/20 bg-bg-2 glass-panel space-y-5"
           >
             <div className="text-center mb-6">
-              <h3 className="font-serif text-lg text-gold uppercase tracking-wider">Xac Nhan Dat Ban</h3>
+              <h3 className="font-serif text-lg text-gold glow-text uppercase tracking-wider">Xac Nhan Dat Ban</h3>
               <p className="text-[10px] text-muted tracking-wider uppercase mt-1">
                 Yeu cau: {selectedRes.customerName} ({selectedRes.numberOfGuests} nguoi)
               </p>

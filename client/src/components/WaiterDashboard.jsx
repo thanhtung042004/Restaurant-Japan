@@ -169,7 +169,7 @@ export default function WaiterDashboard() {
     <div className="space-y-6">
       {/* Overview stats header */}
       <div className="flex justify-between items-center pb-4 border-b border-gold/10">
-        <h2 className="font-serif text-lg text-gold uppercase tracking-wider">POS Phuc Vu & Goi Mon</h2>
+        <h2 className="font-serif text-lg text-gold glow-text uppercase tracking-wider">POS Phuc Vu & Goi Mon</h2>
         <button 
           onClick={loadData}
           className="p-2 border border-gold/20 hover:border-gold hover:text-gold transition-colors text-xs flex items-center gap-1.5"
@@ -187,7 +187,7 @@ export default function WaiterDashboard() {
           
           {/* Column 1: Floor Plan Tables */}
           <div className="lg:col-span-2 space-y-4">
-            <h3 className="font-serif text-sm text-gold uppercase tracking-wider">So do ban an</h3>
+            <h3 className="font-serif text-sm text-gold glow-text uppercase tracking-wider">So do ban an</h3>
             
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {tables.map((t) => (
@@ -220,14 +220,14 @@ export default function WaiterDashboard() {
           </div>
 
           {/* Column 2: Order Operations Panel */}
-          <div className="bg-bg-2 border border-gold/10 p-5 md:p-6 min-h-[500px] flex flex-col justify-between">
+          <div className="glass-panel-luxury p-5 md:p-6 min-h-[500px] flex flex-col justify-between">
             {selectedTable ? (
               <div className="flex flex-col h-full justify-between gap-6">
                 <div>
                   {/* Table details header */}
                   <div className="pb-4 border-b border-gold/10 flex justify-between items-center">
                     <div>
-                      <h4 className="font-serif text-base text-gold uppercase tracking-wider">
+                      <h4 className="font-serif text-base text-gold glow-text uppercase tracking-wider">
                         Ban {selectedTable.tableNumber}
                       </h4>
                       <p className="text-[10px] text-muted uppercase mt-0.5">Khu: {selectedTable.area}</p>
@@ -375,7 +375,7 @@ export default function WaiterDashboard() {
           {/* Menu Catalog at bottom if table occupied */}
           {selectedTable && selectedTable.status === 'occupied' && (
             <div className="lg:col-span-3 border-t border-gold/10 pt-6 space-y-4">
-              <h3 className="font-serif text-sm text-gold uppercase tracking-wider">Danh muc thuc don goi mon</h3>
+              <h3 className="font-serif text-sm text-gold glow-text uppercase tracking-wider">Danh muc thuc don goi mon</h3>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                 {menuItems.map((item) => (

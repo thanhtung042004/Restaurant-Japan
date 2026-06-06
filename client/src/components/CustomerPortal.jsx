@@ -111,7 +111,7 @@ export default function CustomerPortal({ user, onLogout }) {
   };
 
   return (
-    <div className="min-h-screen bg-bg text-cream flex flex-col">
+    <div className="min-h-screen animate-fade-up bg-bg text-cream flex flex-col">
       {/* Top Header */}
       <header className="h-20 border-b border-gold/10 flex items-center justify-between px-6 md:px-12 bg-bg-2">
         <div className="flex items-center gap-4">
@@ -170,13 +170,13 @@ export default function CustomerPortal({ user, onLogout }) {
         </div>
 
         {/* Tab Content Panels */}
-        <div className="flex-1 bg-bg-2 border border-gold/10 p-6 md:p-8 min-h-[480px]">
+        <div className="flex-1 glass-panel-luxury p-6 md:p-8 min-h-[480px]">
           
           {/* BOOKINGS PANEL */}
           {activeTab === 'bookings' && (
             <div className="space-y-6">
               <div className="flex justify-between items-center pb-4 border-b border-gold/10">
-                <h2 className="font-serif text-xl text-gold">Lich Su Dat Ban Cua Ban</h2>
+                <h2 className="font-serif text-xl text-gold glow-text">Lich Su Dat Ban Cua Ban</h2>
                 <button 
                   onClick={() => {
                     navigate('/');
@@ -199,7 +199,7 @@ export default function CustomerPortal({ user, onLogout }) {
                   {reservations.map((res) => (
                     <div 
                       key={res._id}
-                      className="border border-gold/10 p-5 flex flex-col md:flex-row justify-between md:items-center gap-6 bg-glass/20 hover:bg-glass/40 transition-colors"
+                      className="glass-panel-luxury p-5 flex flex-col md:flex-row justify-between md:items-center gap-6 bg-glass/20 hover:bg-glass/40 transition-colors"
                     >
                       <div className="space-y-3">
                         <div className="flex items-center gap-2.5">
@@ -264,7 +264,7 @@ export default function CustomerPortal({ user, onLogout }) {
               {/* Header */}
               <div className="flex items-center gap-3 pb-4 border-b border-gold/10 shrink-0">
                 <Sparkles size={14} className="text-gold animate-pulse" />
-                <h2 className="font-serif text-lg text-gold">Tu Van Am Thuc Chuyen Sau</h2>
+                <h2 className="font-serif text-lg text-gold glow-text">Tu Van Am Thuc Chuyen Sau</h2>
               </div>
 
               {/* Chat area */}
