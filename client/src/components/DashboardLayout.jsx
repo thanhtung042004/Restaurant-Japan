@@ -7,9 +7,11 @@ export default function DashboardLayout({ user, onLogout, children }) {
 
   const getRoleLabel = (role) => {
     switch (role) {
-      case 'admin': return 'Quan Tri Vien';
-      case 'receptionist': return 'Le Tan';
-      case 'waiter': return 'Phuc Vu Table';
+      case 'admin': return 'Quan Tri He Thong';
+      case 'manager': return 'Quan Ly Nha Hang';
+      case 'cashier': return 'Thu Ngan';
+      case 'receptionist': return 'Tiep Tan';
+      case 'waiter': return 'Phuc Vu';
       case 'chef': return 'Bep Truong';
       default: return 'Nhan Vien';
     }
@@ -44,6 +46,7 @@ export default function DashboardLayout({ user, onLogout, children }) {
             </div>
           </div>
 
+          
           {/* Nav Items */}
           <nav className="p-4 space-y-1">
             <Link 
@@ -56,7 +59,62 @@ export default function DashboardLayout({ user, onLogout, children }) {
               </span>
               <ChevronRight size={10} className="opacity-30" />
             </Link>
+
+            {user.role === 'admin' && (
+              <>
+                <div className="px-4 py-3 text-xs tracking-wider uppercase text-gold bg-gold/5 flex items-center justify-between">
+                  <span className="flex items-center gap-3"><Shield size={13}/> He Thong</span>
+                  <ChevronRight size={10} className="text-gold" />
+                </div>
+              </>
+            )}
+
+            {user.role === 'manager' && (
+              <>
+                <div className="px-4 py-3 text-xs tracking-wider uppercase text-gold bg-gold/5 flex items-center justify-between">
+                  <span className="flex items-center gap-3"><Shield size={13}/> Quan Ly</span>
+                  <ChevronRight size={10} className="text-gold" />
+                </div>
+              </>
+            )}
+
+            {user.role === 'cashier' && (
+              <>
+                <div className="px-4 py-3 text-xs tracking-wider uppercase text-gold bg-gold/5 flex items-center justify-between">
+                  <span className="flex items-center gap-3"><Shield size={13}/> Thu Ngan</span>
+                  <ChevronRight size={10} className="text-gold" />
+                </div>
+              </>
+            )}
+            
+            {user.role === 'receptionist' && (
+              <>
+                <div className="px-4 py-3 text-xs tracking-wider uppercase text-gold bg-gold/5 flex items-center justify-between">
+                  <span className="flex items-center gap-3"><Shield size={13}/> Dat Ban</span>
+                  <ChevronRight size={10} className="text-gold" />
+                </div>
+              </>
+            )}
+
+            {user.role === 'waiter' && (
+              <>
+                <div className="px-4 py-3 text-xs tracking-wider uppercase text-gold bg-gold/5 flex items-center justify-between">
+                  <span className="flex items-center gap-3"><Shield size={13}/> Phuc Vu</span>
+                  <ChevronRight size={10} className="text-gold" />
+                </div>
+              </>
+            )}
+
+            {user.role === 'chef' && (
+              <>
+                <div className="px-4 py-3 text-xs tracking-wider uppercase text-gold bg-gold/5 flex items-center justify-between">
+                  <span className="flex items-center gap-3"><Shield size={13}/> Nha Bep</span>
+                  <ChevronRight size={10} className="text-gold" />
+                </div>
+              </>
+            )}
           </nav>
+
         </div>
 
         {/* Logout Bottom */}
