@@ -1,0 +1,2753 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SAKURA — Nha Hang Nhat Ban Cao Cap | Dat Ban Truc Tuyen</title>
+  <meta name="description" content="Sakura Restaurant - Trai nghiem am thuc Nhat Ban dich thuc va cao cap. Dat ban truc tuyen. Omakase, Sushi, Teppanyaki tai trung tam thanh pho." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Inter:wght@300;400;500;600&family=Noto+Serif+JP:wght@200;300;400&display=swap" rel="stylesheet" />
+
+  <style>
+    /* =========================================
+       CSS CUSTOM PROPERTIES
+    ========================================= */
+    :root {
+      --bg: #070503;
+      --bg-2: #0e0a06;
+      --bg-3: #150f08;
+      --gold: #c9a447;
+      --gold-light: #e8c87a;
+      --gold-dim: rgba(201, 164, 71, 0.6);
+      --gold-glow: rgba(201, 164, 71, 0.15);
+      --wine: #5c1515;
+      --wine-light: #8b2020;
+      --wood: #2a1a08;
+      --wood-light: #3d2510;
+      --cream: #f2e8d5;
+      --cream-dim: #b8a888;
+      --muted: #7a6040;
+      --glass-bg: rgba(255, 255, 255, 0.03);
+      --glass-bg-hover: rgba(255, 255, 255, 0.06);
+      --glass-border: rgba(201, 164, 71, 0.18);
+      --glass-border-hover: rgba(201, 164, 71, 0.4);
+      --shadow-gold: 0 0 40px rgba(201, 164, 71, 0.12);
+      --shadow-deep: 0 20px 60px rgba(0, 0, 0, 0.6);
+      --font-serif: 'Cormorant Garamond', Georgia, serif;
+      --font-jp: 'Noto Serif JP', serif;
+      --font-sans: 'Inter', system-ui, sans-serif;
+      --nav-h: 80px;
+      --section-pad: clamp(80px, 10vw, 140px);
+      --ease-smooth: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* =========================================
+       RESET & BASE
+    ========================================= */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      font-size: 16px;
+      scroll-behavior: smooth;
+      overflow-x: hidden;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--cream);
+      font-family: var(--font-sans);
+      font-weight: 300;
+      line-height: 1.7;
+      overflow-x: hidden;
+      cursor: default;
+    }
+
+    img { display: block; width: 100%; object-fit: cover; }
+    a { text-decoration: none; color: inherit; }
+
+    ::selection {
+      background: rgba(201, 164, 71, 0.3);
+      color: var(--cream);
+    }
+
+    /* =========================================
+       SCROLLBAR
+    ========================================= */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb {
+      background: var(--gold-dim);
+      border-radius: 2px;
+    }
+
+    /* =========================================
+       PRELOADER
+    ========================================= */
+    #preloader {
+      position: fixed;
+      inset: 0;
+      background: var(--bg);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 28px;
+      transition: opacity 0.8s var(--ease-smooth), visibility 0.8s;
+    }
+    #preloader.hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+    .preloader-logo {
+      font-family: var(--font-serif);
+      font-size: 2.8rem;
+      font-weight: 300;
+      letter-spacing: 0.3em;
+      color: var(--gold);
+      animation: preloaderPulse 1.8s ease-in-out infinite;
+    }
+    .preloader-jp {
+      font-family: var(--font-jp);
+      font-size: 0.9rem;
+      color: var(--muted);
+      letter-spacing: 0.3em;
+    }
+    .preloader-bar {
+      width: 120px;
+      height: 1px;
+      background: var(--wood-light);
+      position: relative;
+      overflow: hidden;
+    }
+    .preloader-bar::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      animation: preloaderBar 1.5s ease-in-out infinite;
+    }
+    @keyframes preloaderBar {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+    @keyframes preloaderPulse {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+
+    /* =========================================
+       CUSTOM CURSOR
+    ========================================= */
+    .cursor-dot {
+      width: 6px; height: 6px;
+      background: var(--gold);
+      border-radius: 50%;
+      position: fixed;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      transition: transform 0.1s, opacity 0.3s;
+    }
+    .cursor-ring {
+      width: 28px; height: 28px;
+      border: 1px solid rgba(201, 164, 71, 0.5);
+      border-radius: 50%;
+      position: fixed;
+      pointer-events: none;
+      z-index: 9997;
+      transform: translate(-50%, -50%);
+      transition: transform 0.15s var(--ease-smooth), width 0.3s, height 0.3s, border-color 0.3s;
+    }
+    body:has(a:hover) .cursor-ring,
+    body:has(button:hover) .cursor-ring {
+      width: 44px; height: 44px;
+      border-color: var(--gold);
+    }
+
+    /* =========================================
+       NAVIGATION
+    ========================================= */
+    #nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--nav-h);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 clamp(20px, 5vw, 60px);
+      transition: background 0.5s var(--ease-smooth), backdrop-filter 0.5s, border-bottom 0.5s;
+    }
+    #nav.scrolled {
+      background: rgba(7, 5, 3, 0.85);
+      backdrop-filter: blur(24px) saturate(180%);
+      border-bottom: 1px solid var(--glass-border);
+    }
+    .nav-logo {
+      font-family: var(--font-serif);
+      font-size: 1.6rem;
+      font-weight: 400;
+      letter-spacing: 0.25em;
+      color: var(--gold);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .nav-logo-jp {
+      font-family: var(--font-jp);
+      font-size: 0.6rem;
+      color: var(--muted);
+      letter-spacing: 0.4em;
+      font-weight: 300;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: clamp(20px, 3vw, 40px);
+      list-style: none;
+    }
+    .nav-links a {
+      font-size: 0.75rem;
+      font-weight: 400;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--cream-dim);
+      position: relative;
+      padding-bottom: 3px;
+      transition: color 0.3s;
+    }
+    .nav-links a::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0;
+      height: 1px;
+      background: var(--gold);
+      transition: width 0.35s var(--ease-smooth);
+    }
+    .nav-links a:hover { color: var(--gold); }
+    .nav-links a:hover::after { width: 100%; }
+    .nav-cta {
+      background: transparent;
+      border: 1px solid var(--glass-border);
+      color: var(--gold);
+      padding: 10px 24px;
+      font-size: 0.72rem;
+      font-weight: 400;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+    }
+    .nav-cta:hover {
+      background: rgba(201, 164, 71, 0.08);
+      border-color: var(--gold);
+      box-shadow: 0 0 20px rgba(201, 164, 71, 0.15);
+    }
+
+    /* =========================================
+       HERO SECTION
+    ========================================= */
+    #hero {
+      position: relative;
+      height: 100vh;
+      min-height: 700px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .hero-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background-image: url('assets/hero_bg.png');
+      background-size: cover;
+      background-position: center 40%;
+      z-index: 0;
+      transform: scale(1.05);
+      transition: transform 8s ease-out;
+    }
+    .hero-bg.loaded { transform: scale(1); }
+    .hero-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to bottom,
+        rgba(7, 5, 3, 0.2) 0%,
+        rgba(7, 5, 3, 0.1) 30%,
+        rgba(7, 5, 3, 0.3) 60%,
+        rgba(7, 5, 3, 0.85) 100%
+      );
+      z-index: 1;
+    }
+    .hero-side-gradient {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to right,
+        rgba(7, 5, 3, 0.5) 0%,
+        transparent 30%,
+        transparent 70%,
+        rgba(7, 5, 3, 0.5) 100%
+      );
+      z-index: 1;
+    }
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      max-width: 800px;
+      padding: 0 24px;
+    }
+    .hero-badge {
+      display: inline-block;
+      font-family: var(--font-jp);
+      font-size: 0.75rem;
+      font-weight: 200;
+      letter-spacing: 0.5em;
+      color: var(--gold-dim);
+      margin-bottom: 24px;
+      position: relative;
+      padding: 0 20px;
+    }
+    .hero-badge::before,
+    .hero-badge::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 40px;
+      height: 1px;
+      background: var(--gold-dim);
+    }
+    .hero-badge::before { right: 100%; }
+    .hero-badge::after { left: 100%; }
+    .hero-title {
+      font-family: var(--font-serif);
+      font-size: clamp(3.5rem, 8vw, 7rem);
+      font-weight: 300;
+      line-height: 1.05;
+      letter-spacing: 0.06em;
+      color: var(--cream);
+      margin-bottom: 8px;
+      overflow: hidden;
+    }
+    .hero-title-line {
+      display: block;
+      transform: translateY(100%);
+      opacity: 0;
+      animation: heroReveal 1.2s var(--ease-out) forwards;
+    }
+    .hero-title-line:nth-child(2) { animation-delay: 0.15s; }
+    .hero-title-accent {
+      color: var(--gold);
+      font-style: italic;
+    }
+    .hero-subtitle {
+      font-family: var(--font-jp);
+      font-size: clamp(0.85rem, 1.5vw, 1rem);
+      font-weight: 200;
+      letter-spacing: 0.4em;
+      color: var(--muted);
+      margin-bottom: 16px;
+      opacity: 0;
+      animation: fadeUp 1s var(--ease-out) 0.6s forwards;
+    }
+    .hero-desc {
+      font-size: clamp(0.9rem, 1.5vw, 1.05rem);
+      font-weight: 300;
+      color: var(--cream-dim);
+      max-width: 480px;
+      margin: 0 auto 40px;
+      line-height: 1.8;
+      opacity: 0;
+      animation: fadeUp 1s var(--ease-out) 0.8s forwards;
+    }
+    .hero-ctas {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      opacity: 0;
+      animation: fadeUp 1s var(--ease-out) 1s forwards;
+    }
+    .btn-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--gold);
+      color: var(--bg);
+      padding: 16px 36px;
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: none;
+      transition: background 0.3s, box-shadow 0.3s, transform 0.3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-primary::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(255,255,255,0.15);
+      transform: translateX(-100%);
+      transition: transform 0.4s var(--ease-smooth);
+    }
+    .btn-primary:hover::before { transform: translateX(0); }
+    .btn-primary:hover {
+      background: var(--gold-light);
+      box-shadow: 0 0 40px rgba(201, 164, 71, 0.4);
+      transform: translateY(-2px);
+    }
+    .btn-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: transparent;
+      color: var(--cream);
+      padding: 15px 36px;
+      font-size: 0.78rem;
+      font-weight: 400;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      cursor: pointer;
+      border: 1px solid rgba(242, 232, 213, 0.3);
+      transition: border-color 0.3s, color 0.3s, background 0.3s;
+    }
+    .btn-secondary:hover {
+      border-color: var(--cream-dim);
+      color: var(--cream);
+      background: rgba(242, 232, 213, 0.05);
+    }
+    .hero-scroll {
+      position: absolute;
+      bottom: 36px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      opacity: 0;
+      animation: fadeUp 1s var(--ease-out) 1.4s forwards;
+    }
+    .hero-scroll span {
+      font-size: 0.65rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .scroll-line {
+      width: 1px;
+      height: 50px;
+      background: linear-gradient(to bottom, var(--gold-dim), transparent);
+      animation: scrollPulse 2s ease-in-out infinite;
+    }
+    @keyframes scrollPulse {
+      0%, 100% { opacity: 0.4; transform: scaleY(1); }
+      50% { opacity: 1; transform: scaleY(1.1); }
+    }
+    @keyframes heroReveal {
+      to { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* =========================================
+       SECTION SHARED STYLES
+    ========================================= */
+    .section {
+      padding: var(--section-pad) clamp(20px, 6vw, 80px);
+      position: relative;
+    }
+    .section-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: var(--gold-dim);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .section-label::before {
+      content: '';
+      width: 30px;
+      height: 1px;
+      background: var(--gold-dim);
+    }
+    .section-title {
+      font-family: var(--font-serif);
+      font-size: clamp(2.2rem, 4vw, 3.5rem);
+      font-weight: 300;
+      line-height: 1.15;
+      letter-spacing: 0.03em;
+    }
+    .section-title em { font-style: italic; color: var(--gold); }
+    .section-subtitle {
+      font-family: var(--font-jp);
+      font-size: 0.8rem;
+      color: var(--muted);
+      letter-spacing: 0.35em;
+      margin-top: 8px;
+    }
+    .divider {
+      width: 60px;
+      height: 1px;
+      background: linear-gradient(90deg, var(--gold), transparent);
+      margin: 28px 0;
+    }
+    .divider.center { margin: 28px auto; }
+    .reveal {
+      opacity: 0;
+      transform: translateY(40px);
+      transition: opacity 0.9s var(--ease-out), transform 0.9s var(--ease-out);
+    }
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
+    .reveal-delay-4 { transition-delay: 0.4s; }
+    .reveal-delay-5 { transition-delay: 0.5s; }
+
+    /* =========================================
+       ABOUT SECTION
+    ========================================= */
+    #about {
+      background: var(--bg-2);
+      overflow: hidden;
+    }
+    .about-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+    .about-text p {
+      font-size: 1rem;
+      font-weight: 300;
+      color: var(--cream-dim);
+      line-height: 1.9;
+      margin-bottom: 20px;
+    }
+    .about-quote {
+      font-family: var(--font-serif);
+      font-size: 1.5rem;
+      font-style: italic;
+      color: var(--gold);
+      border-left: 2px solid var(--gold);
+      padding-left: 24px;
+      margin: 32px 0;
+      line-height: 1.5;
+    }
+    .about-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 32px;
+    }
+    .stat-card {
+      border: 1px solid var(--glass-border);
+      padding: 28px 24px;
+      background: var(--glass-bg);
+      position: relative;
+      overflow: hidden;
+    }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 2px;
+      height: 100%;
+      background: linear-gradient(to bottom, var(--gold), transparent);
+    }
+    .stat-num {
+      font-family: var(--font-serif);
+      font-size: 2.8rem;
+      font-weight: 300;
+      color: var(--gold);
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+    .stat-label {
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .about-visual {
+      position: relative;
+    }
+    .about-img-wrap {
+      position: relative;
+      aspect-ratio: 3/4;
+      overflow: hidden;
+    }
+    .about-img-wrap img {
+      height: 100%;
+      object-position: center;
+      transition: transform 8s ease-out;
+    }
+    .about-img-wrap:hover img { transform: scale(1.05); }
+    .about-img-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to top,
+        rgba(7, 5, 3, 0.6) 0%,
+        transparent 50%
+      );
+    }
+    .about-img-badge {
+      position: absolute;
+      bottom: 24px;
+      right: -20px;
+      background: var(--wood);
+      border: 1px solid var(--glass-border);
+      padding: 20px 24px;
+      backdrop-filter: blur(8px);
+    }
+    .about-img-badge .badge-text {
+      font-family: var(--font-serif);
+      font-size: 1.1rem;
+      color: var(--gold);
+    }
+    .about-img-badge .badge-sub {
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    /* =========================================
+       SIGNATURE DISHES
+    ========================================= */
+    #dishes {
+      background: var(--bg);
+    }
+    .dishes-header {
+      max-width: 1200px;
+      margin: 0 auto 60px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .dishes-grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2px;
+    }
+    .dish-card {
+      position: relative;
+      aspect-ratio: 3/4;
+      overflow: hidden;
+      cursor: pointer;
+      background: var(--bg-3);
+    }
+    .dish-card-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.8s var(--ease-smooth), filter 0.5s;
+      filter: brightness(0.85) saturate(0.9);
+    }
+    .dish-card:hover .dish-card-img {
+      transform: scale(1.06);
+      filter: brightness(0.7) saturate(1.1);
+    }
+    .dish-card-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        to top,
+        rgba(7, 5, 3, 0.95) 0%,
+        rgba(7, 5, 3, 0.3) 50%,
+        transparent 100%
+      );
+      transition: background 0.4s;
+    }
+    .dish-card:hover .dish-card-overlay {
+      background: linear-gradient(
+        to top,
+        rgba(7, 5, 3, 1) 0%,
+        rgba(7, 5, 3, 0.5) 60%,
+        rgba(7, 5, 3, 0.1) 100%
+      );
+    }
+    .dish-card-content {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 32px 28px;
+    }
+    .dish-tag {
+      font-family: var(--font-jp);
+      font-size: 0.65rem;
+      letter-spacing: 0.3em;
+      color: var(--gold-dim);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .dish-tag::before {
+      content: '';
+      width: 16px;
+      height: 1px;
+      background: var(--gold-dim);
+    }
+    .dish-name {
+      font-family: var(--font-serif);
+      font-size: 1.5rem;
+      font-weight: 400;
+      line-height: 1.2;
+      color: var(--cream);
+      margin-bottom: 8px;
+      transition: color 0.3s;
+    }
+    .dish-card:hover .dish-name { color: var(--gold-light); }
+    .dish-desc {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.6;
+      margin-bottom: 16px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.4s var(--ease-out), transform 0.4s var(--ease-out);
+    }
+    .dish-card:hover .dish-desc {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .dish-price {
+      font-family: var(--font-serif);
+      font-size: 1.2rem;
+      font-weight: 400;
+      color: var(--gold);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .dish-price-unit {
+      font-family: var(--font-sans);
+      font-size: 0.7rem;
+      color: var(--muted);
+      font-weight: 300;
+    }
+    .dish-card-feature {
+      grid-column: 1 / -1;
+      aspect-ratio: 16/7;
+    }
+    .dish-card-feature .dish-card-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: end;
+      gap: 20px;
+    }
+    .dish-card-feature .dish-name {
+      font-size: 2.2rem;
+    }
+
+    /* Gradient dishes (no image) */
+    .dish-grad-1 { background: radial-gradient(ellipse at 40% 30%, #3d2010 0%, #150a04 60%, #070503 100%); }
+    .dish-grad-2 { background: radial-gradient(ellipse at 60% 40%, #1a0f05 0%, #0a0604 70%, #070503 100%); }
+    .dish-grad-3 { background: radial-gradient(ellipse at 50% 50%, #2a1010 0%, #100606 60%, #070503 100%); }
+
+    /* =========================================
+       SPACE GALLERY
+    ========================================= */
+    #space {
+      background: var(--bg-2);
+      padding: 0;
+    }
+    .space-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: auto;
+      gap: 2px;
+    }
+    .space-cell {
+      position: relative;
+      overflow: hidden;
+      background: var(--bg-3);
+    }
+    .space-cell-main {
+      grid-column: 1 / 3;
+      grid-row: 1 / 3;
+      aspect-ratio: 4/3;
+    }
+    .space-cell-sm { aspect-ratio: 1/1; }
+    .space-cell img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.8s var(--ease-smooth);
+      filter: brightness(0.9) saturate(0.85);
+    }
+    .space-cell:hover img {
+      transform: scale(1.04);
+      filter: brightness(0.7) saturate(1);
+    }
+    .space-cell-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(7, 5, 3, 0.2);
+      display: flex;
+      align-items: flex-end;
+      padding: 24px;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+    .space-cell:hover .space-cell-overlay { opacity: 1; }
+    .space-cell-label {
+      font-family: var(--font-serif);
+      font-size: 1rem;
+      color: var(--cream);
+      letter-spacing: 0.1em;
+    }
+    .space-intro {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: var(--section-pad) clamp(20px, 6vw, 80px);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+    .space-intro-text p {
+      font-size: 1rem;
+      color: var(--cream-dim);
+      line-height: 1.9;
+      margin-bottom: 20px;
+    }
+
+    /* =========================================
+       MENU HIGHLIGHTS
+    ========================================= */
+    #menu {
+      background: var(--bg);
+    }
+    .menu-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .menu-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid var(--glass-border);
+      margin-bottom: 48px;
+      overflow-x: auto;
+    }
+    .menu-tab {
+      padding: 14px 28px;
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.3s, border-color 0.3s;
+      white-space: nowrap;
+    }
+    .menu-tab.active {
+      color: var(--gold);
+      border-bottom-color: var(--gold);
+    }
+    .menu-tab:hover { color: var(--cream); }
+    .menu-panel { display: none; }
+    .menu-panel.active { display: block; }
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1px;
+      background: var(--glass-border);
+    }
+    .menu-item {
+      background: var(--bg);
+      padding: 28px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+      transition: background 0.3s;
+      cursor: pointer;
+    }
+    .menu-item:hover {
+      background: var(--glass-bg);
+    }
+    .menu-item-info { flex: 1; }
+    .menu-item-name {
+      font-family: var(--font-serif);
+      font-size: 1.1rem;
+      font-weight: 400;
+      color: var(--cream);
+      margin-bottom: 4px;
+      transition: color 0.3s;
+    }
+    .menu-item:hover .menu-item-name { color: var(--gold); }
+    .menu-item-desc {
+      font-size: 0.8rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+    .menu-item-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .menu-item-price {
+      font-family: var(--font-serif);
+      font-size: 1.05rem;
+      color: var(--gold);
+      white-space: nowrap;
+    }
+    .menu-item-badge {
+      font-size: 0.6rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--bg);
+      background: var(--gold);
+      padding: 3px 8px;
+    }
+    .menu-item-badge.unavail {
+      background: var(--wine);
+      color: var(--cream-dim);
+    }
+
+    /* =========================================
+       CHEF / PHILOSOPHY
+    ========================================= */
+    #chef {
+      background: var(--bg-2);
+      text-align: center;
+    }
+    .chef-inner {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .chef-kanji {
+      font-family: var(--font-jp);
+      font-size: 4rem;
+      color: var(--gold);
+      opacity: 0.3;
+      margin-bottom: 32px;
+      display: block;
+    }
+    .chef-quote {
+      font-family: var(--font-serif);
+      font-size: clamp(1.5rem, 3vw, 2.2rem);
+      font-weight: 300;
+      font-style: italic;
+      color: var(--cream);
+      line-height: 1.55;
+      margin-bottom: 24px;
+    }
+    .chef-quote em { color: var(--gold); font-style: normal; }
+    .chef-desc {
+      font-size: 0.95rem;
+      color: var(--cream-dim);
+      line-height: 1.85;
+      margin-bottom: 36px;
+    }
+    .chef-profile {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+    .chef-avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: 2px solid var(--glass-border);
+      background: var(--wood);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-jp);
+      font-size: 1.2rem;
+      color: var(--gold);
+    }
+    .chef-name {
+      font-family: var(--font-serif);
+      font-size: 1.1rem;
+      color: var(--cream);
+    }
+    .chef-title-small {
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .philosophy-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      max-width: 1200px;
+      margin: 60px auto 0;
+    }
+    .philosophy-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      padding: 36px 28px;
+      text-align: center;
+      transition: border-color 0.3s, background 0.3s;
+    }
+    .philosophy-card:hover {
+      border-color: var(--glass-border-hover);
+      background: var(--glass-bg-hover);
+    }
+    .philosophy-icon {
+      font-family: var(--font-jp);
+      font-size: 1.8rem;
+      color: var(--gold);
+      margin-bottom: 16px;
+      display: block;
+    }
+    .philosophy-title {
+      font-family: var(--font-serif);
+      font-size: 1.2rem;
+      color: var(--cream);
+      margin-bottom: 10px;
+    }
+    .philosophy-text {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    /* =========================================
+       BOOKING SECTION
+    ========================================= */
+    #booking {
+      background: var(--bg);
+      position: relative;
+      overflow: hidden;
+    }
+    #booking::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(201, 164, 71, 0.06) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .booking-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1.4fr;
+      gap: 80px;
+      align-items: start;
+    }
+    .booking-info {
+      padding-top: 20px;
+    }
+    .booking-info p {
+      font-size: 0.95rem;
+      color: var(--cream-dim);
+      line-height: 1.85;
+      margin-bottom: 20px;
+    }
+    .booking-contact {
+      margin-top: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .booking-contact-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .booking-contact-icon {
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--glass-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.8rem;
+      color: var(--gold);
+      flex-shrink: 0;
+    }
+    .booking-contact-text {
+      font-size: 0.88rem;
+      color: var(--cream-dim);
+    }
+    .booking-form-wrap {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      padding: 48px 40px;
+      backdrop-filter: blur(8px);
+      position: relative;
+      overflow: hidden;
+    }
+    .booking-form-wrap::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    }
+    .booking-form-title {
+      font-family: var(--font-serif);
+      font-size: 1.5rem;
+      font-weight: 300;
+      color: var(--cream);
+      margin-bottom: 32px;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-label {
+      font-size: 0.68rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .form-control {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(201, 164, 71, 0.12);
+      color: var(--cream);
+      padding: 12px 16px;
+      font-size: 0.88rem;
+      font-family: var(--font-sans);
+      font-weight: 300;
+      transition: border-color 0.3s, background 0.3s, box-shadow 0.3s;
+      outline: none;
+      width: 100%;
+      -webkit-appearance: none;
+    }
+    .form-control:focus {
+      border-color: var(--gold-dim);
+      background: rgba(201, 164, 71, 0.04);
+      box-shadow: 0 0 0 3px rgba(201, 164, 71, 0.06);
+    }
+    .form-control::placeholder { color: var(--muted); }
+    select.form-control option { background: var(--bg-2); }
+    .form-submit {
+      width: 100%;
+      background: transparent;
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      padding: 16px;
+      font-size: 0.78rem;
+      font-weight: 400;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.3s, color 0.3s, box-shadow 0.3s;
+      margin-top: 8px;
+      font-family: var(--font-sans);
+    }
+    .form-submit:hover {
+      background: var(--gold);
+      color: var(--bg);
+      box-shadow: 0 0 30px rgba(201, 164, 71, 0.25);
+    }
+    .form-success {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .form-success.show { display: block; }
+    .form-success-icon {
+      font-size: 2rem;
+      color: var(--gold);
+      margin-bottom: 16px;
+    }
+    .form-success h3 {
+      font-family: var(--font-serif);
+      font-size: 1.5rem;
+      color: var(--cream);
+      margin-bottom: 8px;
+    }
+    .form-success p {
+      font-size: 0.88rem;
+      color: var(--muted);
+    }
+
+    /* =========================================
+       AI SECTION
+    ========================================= */
+    #ai {
+      background: var(--bg-2);
+      position: relative;
+      overflow: hidden;
+    }
+    .ai-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 80px;
+      align-items: center;
+    }
+    .ai-badge {
+      display: inline-block;
+      background: rgba(201, 164, 71, 0.1);
+      border: 1px solid var(--glass-border);
+      padding: 6px 16px;
+      font-size: 0.65rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 20px;
+    }
+    .ai-text p {
+      font-size: 0.95rem;
+      color: var(--cream-dim);
+      line-height: 1.85;
+      margin-bottom: 20px;
+    }
+    .ai-features {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .ai-feature {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .ai-feature-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--gold);
+      flex-shrink: 0;
+      margin-top: 6px;
+    }
+    .ai-feature-text {
+      font-size: 0.88rem;
+      color: var(--cream-dim);
+    }
+    .ai-chat-demo {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      padding: 28px;
+      backdrop-filter: blur(8px);
+      position: relative;
+    }
+    .ai-chat-demo::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+    }
+    .chat-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--glass-border);
+    }
+    .chat-header-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--gold);
+      box-shadow: 0 0 8px rgba(201, 164, 71, 0.5);
+      animation: chatPulse 2s ease-in-out infinite;
+    }
+    @keyframes chatPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .chat-header-title {
+      font-size: 0.78rem;
+      color: var(--cream-dim);
+      letter-spacing: 0.1em;
+    }
+    .chat-messages {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 180px;
+    }
+    .chat-msg {
+      max-width: 85%;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
+    .chat-msg.user {
+      align-self: flex-end;
+      background: rgba(201, 164, 71, 0.1);
+      border: 1px solid rgba(201, 164, 71, 0.2);
+      color: var(--cream);
+    }
+    .chat-msg.ai {
+      align-self: flex-start;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--glass-border);
+      color: var(--cream-dim);
+    }
+    .chat-msg.typing {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 14px;
+    }
+    .chat-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--muted);
+      animation: typingDot 1.4s ease-in-out infinite;
+    }
+    .chat-dot:nth-child(2) { animation-delay: 0.2s; }
+    .chat-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingDot {
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.3; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+    .chat-input-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid var(--glass-border);
+    }
+    .chat-input-bar input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--cream-dim);
+      font-size: 0.8rem;
+      font-family: var(--font-sans);
+      placeholder-color: var(--muted);
+    }
+    .chat-input-bar input::placeholder { color: var(--muted); }
+    .chat-send {
+      width: 30px;
+      height: 30px;
+      background: var(--gold);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--bg);
+      font-size: 0.7rem;
+      transition: background 0.3s, box-shadow 0.3s;
+      flex-shrink: 0;
+    }
+    .chat-send:hover {
+      background: var(--gold-light);
+      box-shadow: 0 0 15px rgba(201, 164, 71, 0.3);
+    }
+
+    /* =========================================
+       TESTIMONIALS
+    ========================================= */
+    #testimonials {
+      background: var(--bg);
+      text-align: center;
+    }
+    .testimonials-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .testimonials-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+      margin-top: 48px;
+    }
+    .testimonial-card {
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      padding: 36px 28px;
+      text-align: left;
+      transition: border-color 0.3s;
+    }
+    .testimonial-card:hover { border-color: var(--glass-border-hover); }
+    .testimonial-stars {
+      color: var(--gold);
+      font-size: 0.75rem;
+      letter-spacing: 4px;
+      margin-bottom: 16px;
+    }
+    .testimonial-text {
+      font-family: var(--font-serif);
+      font-size: 1rem;
+      font-style: italic;
+      color: var(--cream-dim);
+      line-height: 1.7;
+      margin-bottom: 20px;
+    }
+    .testimonial-author {
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+    .testimonial-author strong {
+      color: var(--cream);
+      display: block;
+      margin-bottom: 2px;
+      font-weight: 400;
+    }
+
+    /* =========================================
+       FOOTER
+    ========================================= */
+    #footer {
+      background: var(--bg-2);
+      border-top: 1px solid var(--glass-border);
+      padding: 80px clamp(20px, 6vw, 80px) 40px;
+    }
+    .footer-top {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1.5fr 1fr 1fr 1fr;
+      gap: 60px;
+      margin-bottom: 60px;
+    }
+    .footer-brand {}
+    .footer-logo {
+      font-family: var(--font-serif);
+      font-size: 1.8rem;
+      font-weight: 300;
+      color: var(--gold);
+      letter-spacing: 0.25em;
+      margin-bottom: 6px;
+    }
+    .footer-logo-jp {
+      font-family: var(--font-jp);
+      font-size: 0.65rem;
+      color: var(--muted);
+      letter-spacing: 0.4em;
+      margin-bottom: 20px;
+    }
+    .footer-brand-desc {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.8;
+      max-width: 260px;
+    }
+    .footer-social {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .footer-social-link {
+      width: 36px;
+      height: 36px;
+      border: 1px solid var(--glass-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      color: var(--muted);
+      transition: border-color 0.3s, color 0.3s;
+    }
+    .footer-social-link:hover {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+    .footer-col-title {
+      font-size: 0.68rem;
+      letter-spacing: 0.25em;
+      text-transform: uppercase;
+      color: var(--gold-dim);
+      margin-bottom: 20px;
+    }
+    .footer-col-links {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .footer-col-links a {
+      font-size: 0.82rem;
+      color: var(--muted);
+      transition: color 0.3s;
+    }
+    .footer-col-links a:hover { color: var(--cream); }
+    .footer-contact-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      margin-bottom: 14px;
+    }
+    .footer-contact-label {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .footer-contact-value {
+      font-size: 0.85rem;
+      color: var(--cream-dim);
+    }
+    .footer-divider {
+      max-width: 1200px;
+      margin: 0 auto;
+      height: 1px;
+      background: var(--glass-border);
+      margin-bottom: 32px;
+    }
+    .footer-bottom {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .footer-copy {
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+    .footer-legal {
+      display: flex;
+      gap: 24px;
+    }
+    .footer-legal a {
+      font-size: 0.72rem;
+      color: var(--muted);
+      transition: color 0.3s;
+    }
+    .footer-legal a:hover { color: var(--cream); }
+
+    /* =========================================
+       BACK TO TOP
+    ========================================= */
+    #back-top {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      width: 44px;
+      height: 44px;
+      background: var(--glass-bg);
+      border: 1px solid var(--glass-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gold);
+      font-size: 1rem;
+      cursor: pointer;
+      z-index: 50;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.3s, transform 0.3s, border-color 0.3s, background 0.3s;
+      backdrop-filter: blur(8px);
+    }
+    #back-top.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    #back-top:hover {
+      background: rgba(201, 164, 71, 0.1);
+      border-color: var(--gold);
+    }
+
+    /* =========================================
+       DECORATION: Japanese pattern
+    ========================================= */
+    .jp-deco {
+      position: absolute;
+      right: clamp(20px, 4vw, 60px);
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: var(--font-jp);
+      font-size: 8rem;
+      font-weight: 200;
+      color: rgba(201, 164, 71, 0.04);
+      writing-mode: vertical-rl;
+      letter-spacing: 0.1em;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    /* =========================================
+       RESPONSIVE
+    ========================================= */
+    @media (max-width: 1024px) {
+      .about-inner { grid-template-columns: 1fr; gap: 48px; }
+      .about-img-badge { right: 0; }
+      .dishes-grid { grid-template-columns: 1fr 1fr; }
+      .dish-card-feature { aspect-ratio: 16/9; }
+      .space-intro { grid-template-columns: 1fr; gap: 40px; }
+      .booking-inner { grid-template-columns: 1fr; gap: 48px; }
+      .ai-inner { grid-template-columns: 1fr; gap: 48px; }
+      .testimonials-grid { grid-template-columns: 1fr 1fr; }
+      .footer-top { grid-template-columns: 1fr 1fr; gap: 40px; }
+      .philosophy-cards { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 768px) {
+      :root { --nav-h: 64px; }
+      .nav-links { display: none; }
+      .dishes-grid { grid-template-columns: 1fr; }
+      .dish-card-feature { aspect-ratio: 4/3; }
+      .dish-card-feature .dish-card-content { grid-template-columns: 1fr; }
+      .space-grid { grid-template-columns: 1fr; }
+      .space-cell-main { grid-column: 1; grid-row: auto; aspect-ratio: 4/3; }
+      .menu-grid { grid-template-columns: 1fr; }
+      .testimonials-grid { grid-template-columns: 1fr; }
+      .philosophy-cards { grid-template-columns: 1fr; }
+      .footer-top { grid-template-columns: 1fr; gap: 32px; }
+      .about-stats { grid-template-columns: 1fr 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+      .cursor-dot, .cursor-ring { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PRELOADER -->
+  <div id="preloader">
+    <div class="preloader-logo">SAKURA</div>
+    <div class="preloader-jp">桜 — 日本料理</div>
+    <div class="preloader-bar"></div>
+  </div>
+
+  <!-- CUSTOM CURSOR -->
+  <div class="cursor-dot" id="cursorDot"></div>
+  <div class="cursor-ring" id="cursorRing"></div>
+
+  <!-- NAVIGATION -->
+  <nav id="nav">
+    <a href="#hero" class="nav-logo">
+      <span>SAKURA</span>
+      <span class="nav-logo-jp">桜 — 日本料理</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="#about">Gioi Thieu</a></li>
+      <li><a href="#dishes">Mon Dac Trung</a></li>
+      <li><a href="#space">Khong Gian</a></li>
+      <li><a href="#menu">Thuc Don</a></li>
+      <li><a href="#chef">Bep Truong</a></li>
+    </ul>
+    <a href="#booking" class="nav-cta">Dat Ban Ngay</a>
+  </nav>
+
+  <!-- HERO -->
+  <section id="hero">
+    <div class="hero-bg" id="heroBg"></div>
+    <div class="hero-overlay"></div>
+    <div class="hero-side-gradient"></div>
+    <canvas class="hero-canvas" id="heroCanvas"></canvas>
+    <div class="hero-content">
+      <div class="hero-badge reveal">Nha Hang Nhat Ban Cao Cap — Tu Nam 2018</div>
+      <h1 class="hero-title">
+        <span class="hero-title-line">Tinh Hoa</span>
+        <span class="hero-title-line"><em>Am Thuc</em> Nhat</span>
+      </h1>
+      <p class="hero-subtitle">日本の味、心を込めて</p>
+      <p class="hero-desc">
+        Trai nghiem am thuc Nhat Ban dich thuc — noi moi mon an la mot tac pham nghe thuat,
+        duoc tao ra voi su tinh te, tam huyet va nguyen lieu thuong hang.
+      </p>
+      <div class="hero-ctas">
+        <a href="#booking" class="btn-primary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v4M16 2v4M3 10h18M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg>
+          Dat Ban Ngay
+        </a>
+        <a href="#menu" class="btn-secondary">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+          Xem Thuc Don
+        </a>
+      </div>
+    </div>
+    <div class="hero-scroll">
+      <span>Kham Pha</span>
+      <div class="scroll-line"></div>
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section id="about" class="section">
+    <div class="jp-deco">桜和食</div>
+    <div class="about-inner">
+      <div class="about-text">
+        <div class="section-label reveal">Ve Chung Toi</div>
+        <h2 class="section-title reveal reveal-delay-1">
+          Nghe Thuat<br/><em>Omakase</em> Dich Thuc
+        </h2>
+        <div class="divider reveal reveal-delay-2"></div>
+        <div class="about-quote reveal reveal-delay-2">
+          "Moi mon an la mot buc tranh, moi thuc khach la mot nguoi nghe su."
+        </div>
+        <p class="reveal reveal-delay-3">
+          Sakura duoc thanh lap voi khat vong mang den trai nghiem am thuc Nhat Ban
+          chinh thong va cao cap nhat. Chung toi tin rang an uong khong chi la nhu cau
+          sinh ton ma con la nghe thuat — nghe thuat cua su chon lua nguyen lieu,
+          ki thuat che bien va su tran trong danh cho thuc khach.
+        </p>
+        <p class="reveal reveal-delay-4">
+          Toan bo nguyen lieu duoc nhap khau truc tiep tu Nhat Ban — ca hoi Hokkaido,
+          wagyu Kobe, tuong miso truyen thong — dam bao tung trai nghiem vi giac la
+          hanh trinh den tam hon am thuc Nhat Ban.
+        </p>
+        <div class="about-stats reveal reveal-delay-5">
+          <div class="stat-card">
+            <div class="stat-num">15+</div>
+            <div class="stat-label">Nam Kinh Nghiem</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num">80+</div>
+            <div class="stat-label">Mon An Dac Sac</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num">3</div>
+            <div class="stat-label">Sao Michelin</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num">10K+</div>
+            <div class="stat-label">Thuc Khach Hai Long</div>
+          </div>
+        </div>
+      </div>
+      <div class="about-visual reveal">
+        <div class="about-img-wrap">
+          <img src="assets/space_gallery.png" alt="Khong gian nha hang Sakura" />
+          <div class="about-img-overlay"></div>
+        </div>
+        <div class="about-img-badge">
+          <div class="badge-text">Omakase</div>
+          <div class="badge-sub">Chef's Selection — Premium</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SIGNATURE DISHES -->
+  <section id="dishes" class="section">
+    <div class="dishes-header">
+      <div>
+        <div class="section-label reveal">Mon Dac Trung</div>
+        <h2 class="section-title reveal reveal-delay-1">
+          Nhung <em>Tac Pham</em><br/>Am Thuc
+        </h2>
+        <p class="section-subtitle reveal reveal-delay-2">シグネチャーメニュー</p>
+      </div>
+      <a href="#menu" class="btn-secondary reveal reveal-delay-2">
+        Xem Tat Ca
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+    <div class="dishes-grid">
+      <!-- Feature card -->
+      <div class="dish-card dish-card-feature reveal">
+        <img class="dish-card-img" src="assets/sushi_dish.png" alt="Omakase Premium Set" />
+        <div class="dish-card-overlay"></div>
+        <div class="dish-card-content">
+          <div>
+            <div class="dish-tag">Thuong Hieu — Sakura Signature</div>
+            <div class="dish-name">Omakase Premium Set</div>
+            <div class="dish-desc">Ly tuong cho moi dip dac biet. Bo 12 mon duoc bep truong lua chon theo mua, tung mon la mot cuoc hanh trinh am thuc khong ngo.</div>
+          </div>
+          <div>
+            <div class="dish-price">
+              850,000 <span class="dish-price-unit">VND / nguoi</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Wagyu -->
+      <div class="dish-card reveal reveal-delay-1">
+        <img class="dish-card-img" src="assets/wagyu.png" alt="Wagyu Teppanyaki A5" />
+        <div class="dish-card-overlay"></div>
+        <div class="dish-card-content">
+          <div class="dish-tag">Teppanyaki</div>
+          <div class="dish-name">Wagyu Teppanyaki A5</div>
+          <div class="dish-desc">Thit bo Wagyu hang A5 nuong ban sat truoc mat, kem sot ponzu dac biet.</div>
+          <div class="dish-price">450,000 <span class="dish-price-unit">VND</span></div>
+        </div>
+      </div>
+      <!-- Sashimi -->
+      <div class="dish-card dish-grad-2 reveal reveal-delay-2">
+        <div class="dish-card-overlay" style="background: linear-gradient(to top, rgba(7,5,3,0.97) 0%, rgba(7,5,3,0.4) 60%, transparent 100%);"></div>
+        <div class="dish-card-content">
+          <div class="dish-tag">Sashimi</div>
+          <div class="dish-name">Sashimi Thap Cam</div>
+          <div class="dish-desc">Nam loai ca tuoi ngon nhat — ca hoi, ca ngu, tom, muc va bach tuoc, thai lat chinh xac theo ki thuat Nhat.</div>
+          <div class="dish-price">280,000 <span class="dish-price-unit">VND</span></div>
+        </div>
+      </div>
+      <!-- Ramen -->
+      <div class="dish-card dish-grad-3 reveal reveal-delay-1">
+        <div class="dish-card-overlay" style="background: linear-gradient(to top, rgba(7,5,3,0.97) 0%, rgba(7,5,3,0.3) 55%, transparent 100%);"></div>
+        <div class="dish-card-content">
+          <div class="dish-tag">Ramen</div>
+          <div class="dish-name">Spicy Miso Ramen</div>
+          <div class="dish-desc">Mi tuong miso Hokkaido, ham 12 gio, nuoc dung beo ngay, cay vua dung vi.</div>
+          <div class="dish-price">125,000 <span class="dish-price-unit">VND</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SPACE GALLERY -->
+  <section id="space">
+    <div class="space-intro">
+      <div class="space-intro-text">
+        <div class="section-label reveal">Khong Gian</div>
+        <h2 class="section-title reveal reveal-delay-1">
+          <em>Trai Nghiem</em><br/>Thuong Hang
+        </h2>
+        <div class="divider reveal reveal-delay-2"></div>
+        <p class="reveal reveal-delay-3">
+          Sakura duoc thiet ke boi kien truc su hang dau Nhat Ban, ket hop giua ve dep truyen thong
+          wabi-sabi va thiet ke hien dai toi gian. Moi goc nho cua khong gian deu duoc cham chut ti mi,
+          tao nen mot bau khong khi dac trung — tham lang, am ap va sang trong.
+        </p>
+        <p class="reveal reveal-delay-4">
+          He thong ba khu vuc rieng biet: Phong chinh cho trai nghiem khi hau thoai mai,
+          quay sushi do moi mot nhat ban tiep xem bep truong che bien,
+          va phong VIP sang trong danh cho nhung bua tiec rieng tu.
+        </p>
+        <a href="#booking" class="btn-primary reveal reveal-delay-5" style="margin-top:20px; display:inline-flex;">
+          Dat Ban VIP
+        </a>
+      </div>
+      <div class="reveal reveal-delay-2">
+        <div class="about-img-wrap" style="aspect-ratio: 4/3;">
+          <img src="assets/hero_bg.png" alt="Khong gian nha hang" />
+          <div class="about-img-overlay"></div>
+        </div>
+      </div>
+    </div>
+    <div class="space-grid">
+      <div class="space-cell space-cell-main reveal">
+        <img src="assets/space_gallery.png" alt="Phong chinh" />
+        <div class="space-cell-overlay"><span class="space-cell-label">Phong An Chinh</span></div>
+      </div>
+      <div class="space-cell space-cell-sm reveal reveal-delay-1">
+        <img src="assets/hero_bg.png" alt="Quay sushi" style="object-position: 70% center;" />
+        <div class="space-cell-overlay"><span class="space-cell-label">Quay Sushi</span></div>
+      </div>
+      <div class="space-cell space-cell-sm reveal reveal-delay-2">
+        <img src="assets/wagyu.png" alt="Phong VIP" />
+        <div class="space-cell-overlay"><span class="space-cell-label">Phong VIP</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MENU HIGHLIGHTS -->
+  <section id="menu" class="section">
+    <div class="menu-inner">
+      <div style="margin-bottom:48px;">
+        <div class="section-label reveal">Thuc Don</div>
+        <h2 class="section-title reveal reveal-delay-1">Mon <em>Chon Loc</em></h2>
+        <p class="section-subtitle reveal reveal-delay-2">おすすめメニュー</p>
+      </div>
+      <div class="menu-tabs reveal">
+        <button class="menu-tab active" onclick="switchTab('sushi', this)">Sushi & Sashimi</button>
+        <button class="menu-tab" onclick="switchTab('ramen', this)">Ramen</button>
+        <button class="menu-tab" onclick="switchTab('teppanyaki', this)">Teppanyaki</button>
+        <button class="menu-tab" onclick="switchTab('bento', this)">Bento</button>
+        <button class="menu-tab" onclick="switchTab('drinks', this)">Do Uong</button>
+      </div>
+      <!-- Sushi Panel -->
+      <div class="menu-panel active" id="panel-sushi">
+        <div class="menu-grid reveal">
+          <div class="menu-item">
+            <div class="menu-item-info">
+              <div class="menu-item-name">Sushi Ca Hoi</div>
+              <div class="menu-item-desc">Ca hoi Na Uy tuoi, dat tren vien com deo, kem wasabi va gung</div>
+            </div>
+            <div class="menu-item-right">
+              <span class="menu-item-price">85,000 VND</span>
+              <span class="menu-item-badge">Ban Chay</span>
+            </div>
+          </div>
+          <div class="menu-item">
+            <div class="menu-item-info">
+              <div class="menu-item-name">Sashimi Thap Cam 5 Loai</div>
+              <div class="menu-item-desc">Nam loai ca tuoi - ca hoi, ca ngu, tom, muc, bach tuoc</div>
+            </div>
+            <div class="menu-item-right">
+              <span class="menu-item-price">280,000 VND</span>
+              <span class="menu-item-badge">Premium</span>
+            </div>
+          </div>
+          <div class="menu-item">
+            <div class="menu-item-info">
+              <div class="menu-item-name">Sushi Boc Lua Ca Hoi Cay</div>
+              <div class="menu-item-desc">Ca hoi cuon spicy mayo, nuong phun lua thom ngon, cay vua</div>
+            </div>
+            <div class="menu-item-right">
+              <span class="menu-item-price">95,000 VND</span>
+            </div>
+          </div>
+          <div class="menu-item">
+            <div class="menu-item-info">
+              <div class="menu-item-name">Sashimi Ca Hoi</div>
+              <div class="menu-item-desc">Ca hoi Na Uy thai lat mong, kem nuoc tuong va wasabi nguyen chat</div>
+            </div>
+            <div class="menu-item-right">
+              <span class="menu-item-price">120,000 VND</span>
+              <span class="menu-item-badge">Ban Chay</span>
+            </div>
+          </div>
+          <div class="menu-item">
+            <div class="menu-item-info">
+              <div class="menu-item-name">Sushi Chay Rau Cu</div>
+              <div class="menu-item-desc">Rau cu tuoi cuon com nori, phu hop cho nguoi chay</div>
+            </div>
+            <div class="menu-item-right">
+              <span class="menu-item-price">55,000 VND</span>
+            </div>
+          </div>
+          <div class="menu-item">
+            <div class="menu-item-info">
+              <div class="menu-item-name">Omakase Premium</div>
+              <div class="menu-item-desc">12 mon bep truong lua chon, trai nghiem dich thuc — dat truoc 24h</div>
+            </div>
+            <div class="menu-item-right">
+              <span class="menu-item-price">850,000 VND</span>
+              <span class="menu-item-badge">Signature</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Ramen Panel -->
+      <div class="menu-panel" id="panel-ramen">
+        <div class="menu-grid reveal">
+          <div class="menu-item">
+            <div class="menu-item-info">
+              <div class="menu-item-name">Tonkotsu Ramen</div>
+              <div class="menu-item-desc">Nuoc ham xuong lon 12 gio, beo ngay, kem trung tiem, thit ba chi</div>
+            </div>
+            <div class="menu-item-right">
+              <span class="menu-item-price">110,000 VND</span>
+              <span class="menu-item-badge">Ban Chay</span>
+            </div>
+          </div>
+          <div class="menu-item">
+            <div class="menu-item-info">
+              <div class="menu-item-name">Spicy Miso Ramen</div>
+              <div class="menu-item-desc">Tuong miso nuong Hokkaido, cay nong dam da, kem thit bo</div>
+            </div>
+            <div class="menu-item-right">
+              <span class="menu-item-price">125,000 VND</span>
+              <span class="menu-item-badge">Cay</span>
+            </div>
+          </div>
+          <div class="menu-item">
+            <div class="menu-item-info">
+              <div class="menu-item-name">Shoyu Ramen</div>
+              <div class="menu-item-desc">Nuoc tuong nhe, trong sang, vi thanh truyen thong Tokyo</div>
+            </div>
+            <div class="menu-item-right">
+              <span class="menu-item-price">100,000 VND</span>
+            </div>
+          </div>
+          <div class="menu-item">
+            <div class="menu-item-info">
+              <div class="menu-item-name">Seafood Ramen</div>
+              <div class="menu-item-desc">Mi hai san nhieu thanh phan, nuoc dashi vi umami dac trung</div>
+            </div>
+            <div class="menu-item-right">
+              <span class="menu-item-price">135,000 VND</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Teppanyaki Panel -->
+      <div class="menu-panel" id="panel-teppanyaki">
+        <div class="menu-grid reveal">
+          <div class="menu-item">
+            <div class="menu-item-info">
+              <div class="menu-item-name">Wagyu A5 Teppanyaki</div>
+              <div class="menu-item-desc">Bo Wagyu hang A5, nuong ban sat, giu nuoc ngot tu nhien — thuong dinh cua nuong</div>
+            </div>
+            <div class="menu-item-right">
+              <span class="menu-item-price">450,000 VND</span>
+              <span class="menu-item-badge">Premium</span>
+            </div>
+          </div>
+          <div class="menu-item">
+            <div class="menu-item-info">
+              <div class="menu-item-name">Hai San Hon Hop</div>
+              <div class="menu-item-desc">Tom, muc, so diep nuong ban sat, kem sot ponzu tuoi ngon</div>
+            </div>
+            <div class="menu-item-right">
+              <span class="menu-item-price">380,000 VND</span>
+            </div>
+          </div>
+          <div class="menu-item">
+            <div class="menu-item-info">
+              <div class="menu-item-name">Ga Cay Nhat Ban</div>
+              <div class="menu-item-desc">Ga nuong ban sat sot cay dac biet, thom beo dung vi</div>
+            </div>
+            <div class="menu-item-right">
+              <span class="menu-item-price">170,000 VND</span>
+              <span class="menu-item-badge">Cay</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Bento Panel -->
+      <div class="menu-panel" id="panel-bento">
+        <div class="menu-grid reveal">
+          <div class="menu-item">
+            <div class="menu-item-info">
+              <div class="menu-item-name">Bento Ga Teriyaki</div>
+              <div class="menu-item-desc">Com hop ga nuong sot teriyaki ngot beo, kem rau tron va soup miso</div>
+            </div>
+            <div class="menu-item-right">
+              <span class="menu-item-price">130,000 VND</span>
+              <span class="menu-item-badge">Ban Chay</span>
+            </div>
+          </div>
+          <div class="menu-item">
+            <div class="menu-item-info">
+              <div class="menu-item-name">Bento Bo Wagyu</div>
+              <div class="menu-item-desc">Thit bo Wagyu nuong tu nhien, dat tren com nong, kem rau mua</div>
+            </div>
+            <div class="menu-item-right">
+              <span class="menu-item-price">220,000 VND</span>
+              <span class="menu-item-badge">Premium</span>
+            </div>
+          </div>
+          <div class="menu-item">
+            <div class="menu-item-info">
+              <div class="menu-item-name">Bento Ca Hoi Nuong</div>
+              <div class="menu-item-desc">Ca hoi phi le nuong vang hong, com deo va rau mua tuoi</div>
+            </div>
+            <div class="menu-item-right">
+              <span class="menu-item-price">165,000 VND</span>
+            </div>
+          </div>
+          <div class="menu-item">
+            <div class="menu-item-info">
+              <div class="menu-item-name">Bento Chay Nhat Ban</div>
+              <div class="menu-item-desc">Com hop chay da dang: dau phu, rau cu, vung — phu hop nguoi an chay</div>
+            </div>
+            <div class="menu-item-right">
+              <span class="menu-item-price">100,000 VND</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Drinks Panel -->
+      <div class="menu-panel" id="panel-drinks">
+        <div class="menu-grid reveal">
+          <div class="menu-item">
+            <div class="menu-item-info">
+              <div class="menu-item-name">Sake Junmai Daiginjo</div>
+              <div class="menu-item-desc">Ruou sake thuong hang Nhat Ban, huong thom tinh te, uong am hoac lanh</div>
+            </div>
+            <div class="menu-item-right">
+              <span class="menu-item-price">120,000 VND</span>
+              <span class="menu-item-badge">Ban Chay</span>
+            </div>
+          </div>
+          <div class="menu-item">
+            <div class="menu-item-info">
+              <div class="menu-item-name">Tra Xanh Matcha</div>
+              <div class="menu-item-desc">Matcha nguyen chat truyen thong Nhat Ban, pha thu cong</div>
+            </div>
+            <div class="menu-item-right">
+              <span class="menu-item-price">45,000 VND</span>
+            </div>
+          </div>
+          <div class="menu-item">
+            <div class="menu-item-info">
+              <div class="menu-item-name">Bia Sapporo</div>
+              <div class="menu-item-desc">Bia Nhat Ban thuong hieu Sapporo, vi diu nhe dac trung</div>
+            </div>
+            <div class="menu-item-right">
+              <span class="menu-item-price">55,000 VND</span>
+            </div>
+          </div>
+          <div class="menu-item">
+            <div class="menu-item-info">
+              <div class="menu-item-name">Nuoc Cam Ep Tuoi</div>
+              <div class="menu-item-desc">Cam tuoi ep nguyen chat, khong them duong</div>
+            </div>
+            <div class="menu-item-right">
+              <span class="menu-item-price">40,000 VND</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CHEF / PHILOSOPHY -->
+  <section id="chef" class="section">
+    <div class="chef-inner">
+      <span class="chef-kanji reveal">匠</span>
+      <blockquote class="chef-quote reveal reveal-delay-1">
+        "Nau an khong chi la ky thuat —
+        do la <em>nghe thuat</em> truyen dat cam xuc
+        qua tung vi giac, huong vi va hinh thuc."
+      </blockquote>
+      <div class="divider center reveal reveal-delay-2"></div>
+      <p class="chef-desc reveal reveal-delay-3">
+        Bep truong Yamamoto Kenji — voi hon 20 nam kinh nghiem tai cac nha hang Michelin-star o Tokyo va Osaka —
+        la linh hon cua Sakura. Ong da hoc nghe tu nhung bac thay omakase vi dai nhat Nhat Ban,
+        roi dua toan bo tinh hoa do vao tung mon an tai Sakura, ket hop voi nguyen lieu dia phuong
+        de tao nen phong cach rieng biet — vua quen, vua la.
+      </p>
+      <div class="chef-profile reveal reveal-delay-4">
+        <div class="chef-avatar">山</div>
+        <div>
+          <div class="chef-name">Yamamoto Kenji</div>
+          <div class="chef-title-small">Head Chef — 20 years Michelin experience</div>
+        </div>
+      </div>
+    </div>
+    <div class="philosophy-cards">
+      <div class="philosophy-card reveal">
+        <span class="philosophy-icon">旬</span>
+        <div class="philosophy-title">Nguyen Lieu Theo Mua</div>
+        <p class="philosophy-text">Moi mon an duoc xay dung quanh nguyen lieu tươi nhat theo mua, nhap khau truc tiep tu Nhat Ban moi tuan.</p>
+      </div>
+      <div class="philosophy-card reveal reveal-delay-1">
+        <span class="philosophy-icon">技</span>
+        <div class="philosophy-title">Ki Thuat Chinh Xac</div>
+        <p class="philosophy-text">Tu each thai sashimi den nhiet do nuong teppanyaki — moi chi tiet duoc thuc hien chinh xac den tung milimet.</p>
+      </div>
+      <div class="philosophy-card reveal reveal-delay-2">
+        <span class="philosophy-icon">心</span>
+        <div class="philosophy-title">Tam Huyet Va Su Tran Trong</div>
+        <p class="philosophy-text">Moi thuc khach la mot vi khach quy. Chung toi trao gui vao do su tran trong va tam huyet cua toan bo ekip.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- BOOKING SECTION -->
+  <section id="booking" class="section">
+    <div class="booking-inner">
+      <div class="booking-info">
+        <div class="section-label reveal">Dat Ban</div>
+        <h2 class="section-title reveal reveal-delay-1">
+          Trai Nghiem<br/><em>Dang Cho</em> Ban
+        </h2>
+        <div class="divider reveal reveal-delay-2"></div>
+        <p class="reveal reveal-delay-3">
+          Dat ban truc tuyen de dam bao ban co mot buoi toi hoan hao tai Sakura.
+          Chung toi khuyen ban nen dat ban truoc it nhat 48 gio de co duoc vi tri va
+          thuc don theo yeu cau tot nhat.
+        </p>
+        <p class="reveal reveal-delay-4">
+          Voi cac su kien dac biet — sinh nhat, ki niem, hop dong kinh doanh —
+          doi ngu cua chung toi se cham soc den tung chi tiet de buoi toi them y nghia.
+        </p>
+        <div class="booking-contact reveal reveal-delay-5">
+          <div class="booking-contact-item">
+            <div class="booking-contact-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.27h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l.91-.91a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+            </div>
+            <div class="booking-contact-text">+84 28 3838 8888</div>
+          </div>
+          <div class="booking-contact-item">
+            <div class="booking-contact-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </div>
+            <div class="booking-contact-text">reservation@sakura-japan.com</div>
+          </div>
+          <div class="booking-contact-item">
+            <div class="booking-contact-icon">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            </div>
+            <div class="booking-contact-text">123 Nguyen Hue, Quan 1, TP.HCM</div>
+          </div>
+        </div>
+      </div>
+      <div class="booking-form-wrap reveal">
+        <div id="bookingFormContainer">
+          <div class="booking-form-title">Tao Dat Ban Moi</div>
+          <form id="bookingForm" onsubmit="submitBooking(event)">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="bookName">Ho va Ten</label>
+                <input type="text" id="bookName" class="form-control" placeholder="Nguyen Van A" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="bookPhone">So Dien Thoai</label>
+                <input type="tel" id="bookPhone" class="form-control" placeholder="0901 234 567" required />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="bookEmail">Email</label>
+              <input type="email" id="bookEmail" class="form-control" placeholder="your@email.com" />
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label" for="bookDate">Ngay Dat Ban</label>
+                <input type="date" id="bookDate" class="form-control" required />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="bookTime">Gio</label>
+                <select id="bookTime" class="form-control" required>
+                  <option value="">Chon gio</option>
+                  <option>11:00</option>
+                  <option>11:30</option>
+                  <option>12:00</option>
+                  <option>12:30</option>
+                  <option>13:00</option>
+                  <option>17:30</option>
+                  <option>18:00</option>
+                  <option>18:30</option>
+                  <option>19:00</option>
+                  <option>19:30</option>
+                  <option>20:00</option>
+                  <option>20:30</option>
+                  <option>21:00</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="bookGuests">So Luong Khach</label>
+              <select id="bookGuests" class="form-control" required>
+                <option value="">Chon so luong</option>
+                <option>1 nguoi</option>
+                <option>2 nguoi</option>
+                <option>3 nguoi</option>
+                <option>4 nguoi</option>
+                <option>5 nguoi</option>
+                <option>6 nguoi</option>
+                <option>7-10 nguoi</option>
+                <option>Tren 10 nguoi</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="bookNote">Ghi Chu Dac Biet</label>
+              <textarea id="bookNote" class="form-control" rows="3" placeholder="Di ung thuc pham, dip dac biet, yeu cau chon ban..."></textarea>
+            </div>
+            <button type="submit" class="form-submit">Xac Nhan Dat Ban</button>
+          </form>
+        </div>
+        <div class="form-success" id="formSuccess">
+          <div class="form-success-icon">✦</div>
+          <h3>Dat Ban Thanh Cong!</h3>
+          <p>Chung toi da nhan duoc yeu cau cua ban va se lien he xac nhan trong vong 2 gio.</p>
+          <p style="margin-top:8px;">Cam on ban da tin tuong chon Sakura.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI SECTION -->
+  <section id="ai" class="section">
+    <div class="ai-inner">
+      <div class="ai-text">
+        <div class="ai-badge reveal">Tro Ly AI</div>
+        <h2 class="section-title reveal reveal-delay-1">
+          AI <em>Ho Tro</em><br/>Goi Y Mon An
+        </h2>
+        <div class="divider reveal reveal-delay-2"></div>
+        <p class="reveal reveal-delay-3">
+          He thong AI thong minh cua Sakura giup ban lua chon mon an phu hop nhat voi
+          khau vi, so thich an uong va dip dac biet cua ban — nhanh chong, chinh xac
+          va ca nhan hoa.
+        </p>
+        <p class="reveal reveal-delay-4">
+          Chi can mo ta so thich, AI se de xuat cac mon an phu hop, ket hop
+          voi ruou sake tuong thich va goi y kinh nghiem am thuc tron ven.
+        </p>
+        <div class="ai-features reveal reveal-delay-5">
+          <div class="ai-feature">
+            <div class="ai-feature-dot"></div>
+            <span class="ai-feature-text">Goi y mon an theo khau vi ca nhan (cay, ngot, hai san, chay...)</span>
+          </div>
+          <div class="ai-feature">
+            <div class="ai-feature-dot"></div>
+            <span class="ai-feature-text">Ket hop mon an voi ruou sake va tra Nhat phu hop</span>
+          </div>
+          <div class="ai-feature">
+            <div class="ai-feature-dot"></div>
+            <span class="ai-feature-text">Ho tro dat ban va xem thuc don thong minh</span>
+          </div>
+          <div class="ai-feature">
+            <div class="ai-feature-dot"></div>
+            <span class="ai-feature-text">Giai dap moi thac mac ve mon an va nguyen lieu</span>
+          </div>
+        </div>
+        <a href="#booking" class="btn-primary reveal" style="margin-top:32px; display:inline-flex;">
+          Thu Ngay
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </a>
+      </div>
+      <div class="ai-chat-demo reveal reveal-delay-2">
+        <div class="chat-header">
+          <div class="chat-header-dot"></div>
+          <span class="chat-header-title">Sakura AI — Tro Ly Am Thuc</span>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+          <div class="chat-msg ai">Xin chao! Toi la tro ly AI cua Sakura. Ban muon thu mon gi toi nay? Hay ke toi nghe so thich cua ban.</div>
+          <div class="chat-msg user">Toi thich do cay, khong an hai san, muon mot bo com ngon.</div>
+          <div class="chat-msg ai" id="aiReply" style="display:none;"></div>
+          <div class="chat-msg typing" id="aiTyping" style="display:none;">
+            <div class="chat-dot"></div>
+            <div class="chat-dot"></div>
+            <div class="chat-dot"></div>
+          </div>
+        </div>
+        <div class="chat-input-bar">
+          <input type="text" id="chatInput" placeholder="Nhap so thich cua ban..." onkeydown="if(event.key==='Enter') sendChat()" />
+          <button class="chat-send" onclick="sendChat()">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TESTIMONIALS -->
+  <section id="testimonials" class="section">
+    <div class="testimonials-inner">
+      <div class="section-label reveal" style="justify-content:center;">Danh Gia</div>
+      <h2 class="section-title reveal reveal-delay-1">Khach Hang <em>Noi Gi</em></h2>
+      <div class="testimonials-grid">
+        <div class="testimonial-card reveal reveal-delay-1">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-text">"Trai nghiem omakase tai Sakura la mot trong nhung bua an dep nhat trong cuoc doi toi. Bep truong Yamamoto co kha nang bien nguyen lieu thanh nghe thuat."</p>
+          <div class="testimonial-author"><strong>Tran Minh Hoa</strong>Food Blogger — Saigon Gastronomy</div>
+        </div>
+        <div class="testimonial-card reveal reveal-delay-2">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-text">"Khong gian dep, mon an tuyet voi, phuc vu chu dao. Chung toi dat ban sinh nhat tai day va moi thu deu vuot ngoai mong doi. Se quay lai!"</p>
+          <div class="testimonial-author"><strong>Nguyen Phuong Linh</strong>Marketing Director, HCM City</div>
+        </div>
+        <div class="testimonial-card reveal reveal-delay-3">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-text">"Wagyu Teppanyaki o day la tot nhat toi tung thu tai Viet Nam. Gia trị xung dang. Sakura la dinh cao cua am thuc Nhat Ban tai Sai Gon."</p>
+          <div class="testimonial-author"><strong>David Chen</strong>CEO, Asia Pacific Ventures</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer id="footer">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <div class="footer-logo">SAKURA</div>
+        <div class="footer-logo-jp">桜 — 日本料理</div>
+        <p class="footer-brand-desc">
+          Nha hang Nhat Ban cao cap tai trung tam TP.HCM. Trai nghiem am thuc dich thuc, khong gian sang trong va phuc vu chu dao.
+        </p>
+        <div class="footer-social">
+          <a href="#" class="footer-social-link" aria-label="Facebook">f</a>
+          <a href="#" class="footer-social-link" aria-label="Instagram">ig</a>
+          <a href="#" class="footer-social-link" aria-label="Zalo">Z</a>
+        </div>
+      </div>
+      <div>
+        <div class="footer-col-title">Kham Pha</div>
+        <ul class="footer-col-links">
+          <li><a href="#about">Gioi Thieu</a></li>
+          <li><a href="#dishes">Mon Dac Trung</a></li>
+          <li><a href="#space">Khong Gian</a></li>
+          <li><a href="#menu">Thuc Don</a></li>
+          <li><a href="#chef">Bep Truong</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Dich Vu</div>
+        <ul class="footer-col-links">
+          <li><a href="#booking">Dat Ban Truc Tuyen</a></li>
+          <li><a href="#">Tiec Rieng & Sự Kien</a></li>
+          <li><a href="#">Omakase Experience</a></li>
+          <li><a href="#ai">AI Goi Y Mon An</a></li>
+          <li><a href="#">Gift Card</a></li>
+        </ul>
+      </div>
+      <div>
+        <div class="footer-col-title">Lien He</div>
+        <div class="footer-contact-item">
+          <span class="footer-contact-label">Dia Chi</span>
+          <span class="footer-contact-value">123 Nguyen Hue, Q.1, TP.HCM</span>
+        </div>
+        <div class="footer-contact-item">
+          <span class="footer-contact-label">Dien Thoai</span>
+          <span class="footer-contact-value">+84 28 3838 8888</span>
+        </div>
+        <div class="footer-contact-item">
+          <span class="footer-contact-label">Gio Mo Cua</span>
+          <span class="footer-contact-value">T2-CN: 11:00 — 22:00</span>
+        </div>
+        <div class="footer-contact-item">
+          <span class="footer-contact-label">Email</span>
+          <span class="footer-contact-value">info@sakura-japan.com</span>
+        </div>
+      </div>
+    </div>
+    <div class="footer-divider"></div>
+    <div class="footer-bottom">
+      <div class="footer-copy">© 2026 Sakura Restaurant. All rights reserved.</div>
+      <div class="footer-legal">
+        <a href="#">Chinh Sach Bao Mat</a>
+        <a href="#">Dieu Khoan Dich Vu</a>
+        <a href="#">Cookie Policy</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- BACK TO TOP -->
+  <button id="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Back to top">↑</button>
+
+  <script>
+    /* ========================================================
+       PRELOADER
+    ======================================================== */
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        document.getElementById('preloader').classList.add('hidden');
+        document.getElementById('heroBg').classList.add('loaded');
+      }, 1200);
+    });
+
+    /* ========================================================
+       CUSTOM CURSOR
+    ======================================================== */
+    const cursorDot = document.getElementById('cursorDot');
+    const cursorRing = document.getElementById('cursorRing');
+    let mx = 0, my = 0, rx = 0, ry = 0;
+
+    document.addEventListener('mousemove', (e) => {
+      mx = e.clientX;
+      my = e.clientY;
+      cursorDot.style.left = mx + 'px';
+      cursorDot.style.top = my + 'px';
+    });
+
+    function animateCursor() {
+      rx += (mx - rx) * 0.12;
+      ry += (my - ry) * 0.12;
+      cursorRing.style.left = rx + 'px';
+      cursorRing.style.top = ry + 'px';
+      requestAnimationFrame(animateCursor);
+    }
+    animateCursor();
+
+    /* ========================================================
+       CANVAS PARTICLE SYSTEM
+    ======================================================== */
+    const canvas = document.getElementById('heroCanvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    let animId;
+
+    function resizeCanvas() {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', () => { resizeCanvas(); initParticles(); });
+
+    class Particle {
+      constructor() { this.reset(); }
+      reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.size = Math.random() * 1.5 + 0.3;
+        this.speedX = (Math.random() - 0.5) * 0.25;
+        this.speedY = -Math.random() * 0.3 - 0.05;
+        this.opacity = Math.random() * 0.5 + 0.1;
+        this.life = 0;
+        this.maxLife = Math.random() * 300 + 150;
+        // Gold or warm white
+        const isGold = Math.random() > 0.4;
+        this.color = isGold ? `rgba(201,164,71,` : `rgba(242,232,213,`;
+      }
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.life++;
+        const progress = this.life / this.maxLife;
+        this.currentOpacity = this.opacity * Math.sin(progress * Math.PI);
+        if (this.life >= this.maxLife) this.reset();
+      }
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fillStyle = this.color + this.currentOpacity + ')';
+        ctx.fill();
+      }
+    }
+
+    function initParticles() {
+      particles = [];
+      const count = Math.floor(canvas.width * canvas.height / 8000);
+      for (let i = 0; i < Math.min(count, 120); i++) {
+        const p = new Particle();
+        p.life = Math.floor(Math.random() * p.maxLife);
+        particles.push(p);
+      }
+    }
+    initParticles();
+
+    // Atmospheric glow orbs
+    const orbs = [
+      { x: 0.2, y: 0.3, r: 200, color: 'rgba(201,164,71,' },
+      { x: 0.8, y: 0.6, r: 160, color: 'rgba(92,21,21,' },
+      { x: 0.5, y: 0.9, r: 250, color: 'rgba(42,26,8,' },
+    ];
+
+    function drawOrbs() {
+      orbs.forEach(orb => {
+        const grad = ctx.createRadialGradient(
+          orb.x * canvas.width, orb.y * canvas.height, 0,
+          orb.x * canvas.width, orb.y * canvas.height, orb.r
+        );
+        grad.addColorStop(0, orb.color + '0.04)');
+        grad.addColorStop(1, orb.color + '0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(orb.x * canvas.width, orb.y * canvas.height, orb.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    let orbAngle = 0;
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      orbAngle += 0.003;
+      orbs[0].x = 0.2 + Math.sin(orbAngle) * 0.05;
+      orbs[1].x = 0.8 + Math.cos(orbAngle * 0.7) * 0.04;
+      drawOrbs();
+      particles.forEach(p => { p.update(); p.draw(); });
+      animId = requestAnimationFrame(animate);
+    }
+    animate();
+
+    /* ========================================================
+       NAVIGATION SCROLL
+    ======================================================== */
+    const nav = document.getElementById('nav');
+    const backTop = document.getElementById('back-top');
+
+    window.addEventListener('scroll', () => {
+      const sy = window.scrollY;
+      nav.classList.toggle('scrolled', sy > 60);
+      backTop.classList.toggle('visible', sy > 400);
+    });
+
+    /* ========================================================
+       SCROLL REVEAL ANIMATIONS
+    ======================================================== */
+    const revealEls = document.querySelectorAll('.reveal');
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+    revealEls.forEach(el => observer.observe(el));
+
+    /* ========================================================
+       PARALLAX
+    ======================================================== */
+    window.addEventListener('scroll', () => {
+      const sy = window.scrollY;
+      const heroBg = document.getElementById('heroBg');
+      if (heroBg) {
+        heroBg.style.transform = `scale(1) translateY(${sy * 0.25}px)`;
+      }
+    });
+
+    /* ========================================================
+       MENU TABS
+    ======================================================== */
+    function switchTab(id, btn) {
+      document.querySelectorAll('.menu-panel').forEach(p => p.classList.remove('active'));
+      document.querySelectorAll('.menu-tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('panel-' + id).classList.add('active');
+      btn.classList.add('active');
+      // Re-trigger reveal for new panel
+      const newReveals = document.getElementById('panel-' + id).querySelectorAll('.reveal');
+      newReveals.forEach(el => {
+        if (!el.classList.contains('visible')) {
+          observer.observe(el);
+        }
+      });
+    }
+
+    /* ========================================================
+       BOOKING FORM
+    ======================================================== */
+    // Set min date to today
+    const dateInput = document.getElementById('bookDate');
+    if (dateInput) {
+      const today = new Date().toISOString().split('T')[0];
+      dateInput.min = today;
+    }
+
+    function submitBooking(e) {
+      e.preventDefault();
+      const btn = e.target.querySelector('.form-submit');
+      btn.textContent = 'Dang xu ly...';
+      btn.disabled = true;
+
+      setTimeout(() => {
+        document.getElementById('bookingForm').style.display = 'none';
+        document.getElementById('formSuccess').classList.add('show');
+      }, 1500);
+    }
+
+    /* ========================================================
+       AI CHAT DEMO
+    ======================================================== */
+    const aiResponses = {
+      default: [
+        'Dua tren so thich cua ban, toi de xuat:\n\n1. Spicy Miso Ramen (125k) — Mi miso cay Hokkaido, dam da, vo cung dung vi\n2. Wagyu Teppanyaki (450k) — Bo nuong ban sat, khong hai san, vi cay nhe tu sot\n3. Bento Bo Wagyu (220k) — Com hop thit bo ngon, kem rau tron\n\nBan muon biet them ve mon nao khong?',
+        'Tuyet! Voi khau vi thich cay va khong an hai san, toi goi y:\n\n1. Spicy Miso Ramen — Cay muc 3/3, dam me nhat cua chung toi\n2. Ga Cay Teppanyaki — Cay vua, thom va ngon\n3. Yakitori Ga Sot Tare — Nuong que, vi ngot cay hoa quy\n\nMon nao ban muon thu truoc?',
+      ],
+      cay: 'Tuyet! Ban thich cay — day la nhung lua chon phu hop nhat:\n\n1. Spicy Miso Ramen (125k) — Cay muc 3/3, la dich thu cua fan cay\n2. Sushi Boc Lua Ca Hoi Cay (95k) — Cay vua, them spicy mayo\n3. Teppanyaki Ga Cay (170k) — Sot cay dac biet Nhat Ban\n\nBan muon dat ngay khong?',
+      sushi: 'Cho Sushi & Sashimi, chung toi co:\n\n1. Sushi Ca Hoi — Tuoi ngon nhat, ban chay so 1\n2. Sashimi Thap Cam 5 Loai — Dam me ca 5 loai ca tuoi\n3. Omakase Premium — 12 mon bep truong chon, 850k/nguoi\n\nBan muon biet them khong?',
+      ramen: 'Cho Ramen, toi goi y:\n\n1. Tonkotsu Ramen — Ham xuong lon 12 gio, beo ngay (110k)\n2. Spicy Miso Ramen — Vi cay dam da Hokkaido (125k)\n3. Shoyu Ramen — Nhe nhe, truyen thong (100k)\n\nCay hay khong cay, ban thich gi?',
+    };
+
+    let chatSent = false;
+    function sendChat() {
+      const input = document.getElementById('chatInput');
+      const msg = input.value.trim();
+      if (!msg) return;
+
+      const msgs = document.getElementById('chatMessages');
+      const typing = document.getElementById('aiTyping');
+      const aiReply = document.getElementById('aiReply');
+
+      // Add user message
+      const userMsg = document.createElement('div');
+      userMsg.className = 'chat-msg user';
+      userMsg.textContent = msg;
+      msgs.insertBefore(userMsg, typing);
+
+      input.value = '';
+      typing.style.display = 'flex';
+      if (aiReply) aiReply.style.display = 'none';
+      msgs.scrollTop = msgs.scrollHeight;
+
+      // Simulate AI response
+      setTimeout(() => {
+        typing.style.display = 'none';
+        const lowerMsg = msg.toLowerCase();
+        let response = aiResponses.default[chatSent ? 1 : 0];
+        if (lowerMsg.includes('cay')) response = aiResponses.cay;
+        else if (lowerMsg.includes('sushi') || lowerMsg.includes('sashimi')) response = aiResponses.sushi;
+        else if (lowerMsg.includes('ramen')) response = aiResponses.ramen;
+
+        const aiMsg = document.createElement('div');
+        aiMsg.className = 'chat-msg ai';
+        aiMsg.style.whiteSpace = 'pre-line';
+        aiMsg.textContent = response;
+        msgs.appendChild(aiMsg);
+        msgs.scrollTop = msgs.scrollHeight;
+        chatSent = true;
+      }, 1600);
+    }
+
+    // Auto-demo: show a reply after 3 seconds
+    setTimeout(() => {
+      const typing = document.getElementById('aiTyping');
+      const aiReply = document.getElementById('aiReply');
+      if (typing && aiReply) {
+        typing.style.display = 'flex';
+        setTimeout(() => {
+          typing.style.display = 'none';
+          aiReply.style.display = 'block';
+          aiReply.style.whiteSpace = 'pre-line';
+          aiReply.textContent = 'Voi yeu cau do cay va khong hai san, toi goi y:\n\n1. Spicy Miso Ramen — Cay muc 3/3 (125k)\n2. Wagyu Teppanyaki A5 — Khong hai san, thuong dinh (450k)\n3. Bento Bo Cay Nhat — Com bo cay ki kieu (145k)\n\nBan muon dat ban khong?';
+        }, 2000);
+      }
+    }, 3000);
+
+    /* ========================================================
+       HOVER GLOW ON STAT CARDS
+    ======================================================== */
+    document.querySelectorAll('.stat-card').forEach(card => {
+      card.addEventListener('mousemove', (e) => {
+        const rect = card.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        card.style.background = `radial-gradient(circle at ${x}% ${y}%, rgba(201,164,71,0.08) 0%, var(--glass-bg) 60%)`;
+      });
+      card.addEventListener('mouseleave', () => {
+        card.style.background = 'var(--glass-bg)';
+      });
+    });
+
+    /* ========================================================
+       SMOOTH ANCHOR SCROLLING
+    ======================================================== */
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', (e) => {
+        const id = a.getAttribute('href');
+        if (id === '#') return;
+        const target = document.querySelector(id);
+        if (target) {
+          e.preventDefault();
+          const offset = document.getElementById('nav').offsetHeight;
+          const top = target.getBoundingClientRect().top + window.scrollY - offset;
+          window.scrollTo({ top, behavior: 'smooth' });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
