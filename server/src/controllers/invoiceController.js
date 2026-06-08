@@ -24,7 +24,7 @@ const getInvoices = async (req, res) => {
     const total = await Invoice.countDocuments(filter);
     const invoices = await Invoice.find(filter)
       .populate('table', 'tableNumber area')
-      .populate('cashier', 'name')
+      .populate('processedBy', 'name')
       .sort({ createdAt: -1 })
       .skip((Number(page) - 1) * Number(limit))
       .limit(Number(limit));
@@ -49,7 +49,7 @@ const getInvoiceById = async (req, res) => {
     const invoice = await Invoice.findById(req.params.id)
       .populate('order')
       .populate('table', 'tableNumber area')
-      .populate('cashier', 'name');
+      .populate('processedBy', 'name');
 
     if (!invoice) {
       return res.status(404).json({ success: false, message: 'Invoice not found.' });
@@ -114,7 +114,7 @@ const createInvoice = async (req, res) => {
     const invoice = await Invoice.create({
       order: orderId,
       table: order.table._id,
-      cashier: req.user._id,
+      processedBy: req.user._id,
       items: invoiceItems,
       subtotal,
       discount,
@@ -143,7 +143,7 @@ const createInvoice = async (req, res) => {
 
     const populated = await invoice.populate([
       { path: 'table', select: 'tableNumber area' },
-      { path: 'cashier', select: 'name' },
+      { path: 'processedBy', select: 'name' },
     ]);
 
     res.status(201).json({

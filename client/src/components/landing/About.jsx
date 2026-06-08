@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import spaceGallery from '../assets/space_gallery.png';
+import spaceGallery from '../../assets/space_gallery.png';
 
 export default function About() {
   const cardsRef = useRef([]);

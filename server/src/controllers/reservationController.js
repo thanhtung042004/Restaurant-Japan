@@ -114,7 +114,7 @@ const createReservation = async (req, res) => {
       { path: 'customer', select: 'name email' },
     ]);
 
-    // Notify receptionist in realtime
+    // Notify manager/admin in realtime
     const io = req.app.get('io');
     if (io) {
       io.emit('reservation:new', populated);

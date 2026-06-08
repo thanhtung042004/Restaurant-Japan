@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import heroBg from '../assets/hero_bg.png';
+import heroBg from '../../assets/hero_bg.png';
 import { CalendarRange, Menu } from 'lucide-react';
 
 export default function Hero() {

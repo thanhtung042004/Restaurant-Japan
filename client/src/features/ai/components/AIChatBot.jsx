@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { Send, Sparkles, MessageSquare } from 'lucide-react';
-import { aiAPI } from '../services/api';
+import { aiAPI } from '../../../api';
 
 const PRESETS = [
   'Tôi thích ăn cay và muốn thử mì',

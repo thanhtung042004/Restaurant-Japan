@@ -19,7 +19,7 @@ router.get('/:id', getTableById);
 router.put(
   '/:id/status',
   protect,
-  authorize('admin', 'manager', 'waiter', 'receptionist', 'cashier'),
+  authorize('admin', 'manager', 'waiter'),
   updateTableStatus
 );
 router.post('/', protect, authorize('admin', 'manager', 'manager'), createTable);

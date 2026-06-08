@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Send, Sparkles, TrendingUp, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { aiAPI } from '../services/api';
+import { aiAPI } from '../../../api';
 
 export default function AIAssistantDashboard() {
   const [aiChat, setAiChat] = useState([

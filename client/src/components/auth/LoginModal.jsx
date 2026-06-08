@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import { authAPI } from '../services/api';
+import { authAPI } from '../../api';
 
 const QUICK_USERS = [
   { name: 'Admin', email: 'admin@sakura-japan.com', password: 'admin123', role: 'admin' },
-  { name: 'Lễ Tân', email: 'letan@sakura-japan.com', password: 'letan123', role: 'receptionist' },
   { name: 'Phục Vụ', email: 'phucvu@sakura-japan.com', password: 'phucvu123', role: 'waiter' },
-  { name: 'Đầu Bếp', email: 'bep@sakura-japan.com', password: 'bep123', role: 'chef' },
   { name: 'Khách Hàng', email: 'khach@gmail.com', password: 'khach123', role: 'customer' },
 ];
 

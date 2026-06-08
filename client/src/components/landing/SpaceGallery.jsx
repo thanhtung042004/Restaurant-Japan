@@ -1,7 +1,7 @@
 import React from 'react';
-import spaceImg1 from '../assets/space_gallery.png';
-import spaceImg2 from '../assets/hero_bg.png';
-import spaceImg3 from '../assets/wagyu.png';
+import spaceImg1 from '../../assets/space_gallery.png';
+import spaceImg2 from '../../assets/hero_bg.png';
+import spaceImg3 from '../../assets/wagyu.png';
 
 export default function SpaceGallery() {
   const scrollToSection = (id) => {

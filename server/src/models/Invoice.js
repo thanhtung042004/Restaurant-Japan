@@ -12,7 +12,7 @@ const invoiceSchema = new mongoose.Schema(
       ref: 'Table',
       required: true,
     },
-    cashier: {
+    processedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       default: null,

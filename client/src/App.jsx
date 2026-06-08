@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import io from 'socket.io-client';
 import { Toaster } from 'react-hot-toast';
-import { authAPI } from './services/api';
+import { authAPI } from './api';
 
 // Pages
 import LandingPage from './pages/LandingPage';
@@ -63,9 +63,7 @@ export default function App() {
       console.log('Socket.IO connected:', newSocket.id);
       
       // Join specific room based on user role
-      if (user.role === 'chef') {
-        newSocket.emit('join:kitchen');
-      } else if (['admin', 'waiter', 'receptionist'].includes(user.role)) {
+      if (['admin', 'waiter'].includes(user.role)) {
         newSocket.emit('join:staff');
       }
     });

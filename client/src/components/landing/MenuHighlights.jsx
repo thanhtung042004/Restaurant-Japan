@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { menuAPI, categoryAPI } from '../services/api';
+import { menuAPI, categoryAPI } from '../../api';
 
 const FALLBACK_CATEGORIES = [
   { _id: 'sushi_sashimi', name: 'Sushi & Sashimi' },

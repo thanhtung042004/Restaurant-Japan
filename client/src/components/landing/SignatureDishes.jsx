@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowRight } from 'lucide-react';
-import sushiDishImg from '../assets/sushi_dish.png';
-import wagyuImg from '../assets/wagyu.png';
+import sushiDishImg from '../../assets/sushi_dish.png';
+import wagyuImg from '../../assets/wagyu.png';
 
 export default function SignatureDishes() {
   const scrollToSection = (id) => {

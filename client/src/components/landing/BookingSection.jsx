@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { Phone, Mail, MapPin, Calendar, Users, Clock, FileText } from 'lucide-react';
-import { reservationAPI } from '../services/api';
+import { reservationAPI } from '../../api';
 
 const TIME_OPTIONS = [
   '11:00', '11:30', '12:00', '12:30', '13:00',

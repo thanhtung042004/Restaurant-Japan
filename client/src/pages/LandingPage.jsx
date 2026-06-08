@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import Navbar from '../components/Navbar';
-import Hero from '../components/Hero';
-import About from '../components/About';
-import SignatureDishes from '../components/SignatureDishes';
-import SpaceGallery from '../components/SpaceGallery';
-import MenuHighlights from '../components/MenuHighlights';
-import ChefPhilosophy from '../components/ChefPhilosophy';
-import BookingSection from '../components/BookingSection';
-import AIChatBot from '../components/AIChatBot';
-import Testimonials from '../components/Testimonials';
-import Footer from '../components/Footer';
-import LoginModal from '../components/LoginModal';
+import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/layout/Navbar';
+import Hero from '../components/landing/Hero';
+import About from '../components/landing/About';
+import SignatureDishes from '../components/landing/SignatureDishes';
+import SpaceGallery from '../components/landing/SpaceGallery';
+import MenuHighlights from '../components/landing/MenuHighlights';
+import ChefPhilosophy from '../components/landing/ChefPhilosophy';
+import BookingSection from '../components/landing/BookingSection';
+import AIChatBot from '../features/ai/components/AIChatBot';
+import Testimonials from '../components/landing/Testimonials';
+import Footer from '../components/layout/Footer';
+import LoginModal from '../components/auth/LoginModal';
 import { ArrowUp } from 'lucide-react';
 
 export default function LandingPage({
@@ -22,6 +23,7 @@ export default function LandingPage({
   onLoginSuccess
 }) {
   const [showBackTop, setShowBackTop] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Reveal animation using IntersectionObserver
@@ -79,7 +81,10 @@ export default function LandingPage({
       <LoginModal 
         isOpen={showLoginModal} 
         onClose={onCloseLogin} 
-        onLoginSuccess={onLoginSuccess} 
+        onLoginSuccess={(token, data) => {
+          onLoginSuccess(token, data);
+          navigate('/dashboard');
+        }} 
       />
 
       {/* Floating Back to Top Button */}

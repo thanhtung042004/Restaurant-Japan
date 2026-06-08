@@ -30,27 +30,11 @@ const USERS = [
     isActive: true,
   },
   {
-    name: 'Nguyen Le Tan',
-    email: 'letan@sakura-japan.com',
-    password: 'letan123',
-    phone: '0902345678',
-    role: 'receptionist',
-    isActive: true,
-  },
-  {
     name: 'Tran Phuc Vu',
     email: 'phucvu@sakura-japan.com',
     password: 'phucvu123',
     phone: '0903456789',
     role: 'waiter',
-    isActive: true,
-  },
-  {
-    name: 'Le Bep Truong',
-    email: 'bep@sakura-japan.com',
-    password: 'bep123',
-    phone: '0904567890',
-    role: 'chef',
     isActive: true,
   },
   {
@@ -67,14 +51,6 @@ const USERS = [
     password: 'manager123',
     phone: '0909999999',
     role: 'manager',
-    isActive: true,
-  },
-  {
-    name: 'Thu Ngan',
-    email: 'cashier@sakura-japan.com',
-    password: 'cashier123',
-    phone: '0908888888',
-    role: 'cashier',
     isActive: true,
   },
 ];
@@ -557,11 +533,8 @@ const seed = async () => {
 
     console.log('\n--- Login Credentials ---');
     console.log('Admin      : admin@sakura-japan.com     / admin123');
-    console.log('Receptionist: letan@sakura-japan.com   / letan123');
     console.log('Waiter     : phucvu@sakura-japan.com   / phucvu123');
-    console.log('Chef       : bep@sakura-japan.com      / bep123');
     console.log('Manager    : manager@sakura-japan.com   / manager123');
-    console.log('Cashier    : cashier@sakura-japan.com   / cashier123');
     console.log('Customer   : khach@gmail.com            / khach123');
     console.log('-------------------------');
     console.log('Seed completed successfully.');
