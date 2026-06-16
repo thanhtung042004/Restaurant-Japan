@@ -8,9 +8,10 @@ import {
   TrendingUp, Utensils, Table2, Users, Plus, Edit, Trash2,
   BarChart3, FileText, Calendar, CalendarDays, Settings,
   AlertTriangle, CheckCircle2, RefreshCw, Eye, ToggleRight,
-  ArrowUpRight, ArrowDownRight, Star
+  ArrowUpRight, ArrowDownRight, Star, CircleDollarSign, ScrollText, ChevronDown, Bot
 } from 'lucide-react';
-import { invoiceAPI, menuAPI, tableAPI, categoryAPI, authAPI, userAPI, reservationAPI } from '../../../api';
+import { invoiceAPI, menuAPI, tableAPI, categoryAPI, reservationAPI } from '../../../api';
+import AIAssistantDashboard from '../../admin/components/AIAssistantDashboard';
 
 const CHART_COLORS = ['#c9a447', '#e8c87a', '#8b2020', '#3d2510', '#b8a888', '#c87a3d'];
 
@@ -26,8 +27,20 @@ const CustomTooltip = ({ active, payload, label }) => {
   );
 };
 
-export default function ManagerDashboard() {
-  const [subTab, setSubTab] = useState('analytics');
+export default function ManagerDashboard({ activeTab: propTab, onTabChange: propOnTabChange, user, socket }) {
+  const [subTab, setSubTab] = useState(propTab || 'analytics');
+
+  React.useEffect(() => {
+    const validTabs = ['analytics', 'menu', 'tables', 'invoices', 'reservations', 'ai'];
+    if (propTab && validTabs.includes(propTab)) {
+      setSubTab(propTab);
+    }
+  }, [propTab]);
+
+  const setTabWrapper = (tab) => {
+    setSubTab(tab);
+    propOnTabChange?.(tab);
+  };
 
   const [summary, setSummary] = useState(null);
   const [dailyRev, setDailyRev] = useState([]);
@@ -38,7 +51,6 @@ export default function ManagerDashboard() {
   const [menuItems, setMenuItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [tables, setTables] = useState([]);
-  const [users, setUsers] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [reservations, setReservations] = useState([]);
 
@@ -61,14 +73,7 @@ export default function ManagerDashboard() {
   const [tableArea, setTableArea] = useState('Tầng 1');
   const [tableDesc, setTableDesc] = useState('');
 
-  // Staff form
-  const [showUserForm, setShowUserForm] = useState(false);
-  const [editUser, setEditUser] = useState(null);
-  const [userName, setUserName] = useState('');
-  const [userEmail, setUserEmail] = useState('');
-  const [userPassword, setUserPassword] = useState('');
-  const [userPhone, setUserPhone] = useState('');
-  const [userRole, setUserRole] = useState('waiter');
+
 
   const loadStats = async () => {
     try {
@@ -89,24 +94,60 @@ export default function ManagerDashboard() {
 
   const loadCRUDData = async () => {
     try {
-      const [menuRes, catRes, tableRes, userRes, invoiceRes, resRes] = await Promise.all([
+      const [menuRes, catRes, tableRes, invoiceRes, resRes] = await Promise.all([
         menuAPI.getItems({ limit: 100 }),
         categoryAPI.getCategories(),
         tableAPI.getTables(),
-        userAPI.getUsers({ limit: 100 }),
         invoiceAPI.getInvoices({ limit: 100 }),
         reservationAPI.getReservations()
       ]);
       if (menuRes.success) setMenuItems(menuRes.data);
       if (catRes.success) setCategories(catRes.data);
       if (tableRes.success) setTables(tableRes.data);
-      if (userRes.success) setUsers(userRes.data);
       if (invoiceRes.success) setInvoices(invoiceRes.data);
       if (resRes.success) setReservations(resRes.data);
     } catch (err) { toast.error('Lỗi tải dữ liệu: ' + err.message); }
   };
 
-  useEffect(() => { loadStats(); loadCRUDData(); }, []);
+  useEffect(() => {
+    loadStats();
+    loadCRUDData();
+
+    if (socket) {
+      socket.on('table:statusUpdated', ({ tableId, status }) => {
+        setTables(prev => prev.map(t => t._id === tableId ? { ...t, status } : t));
+      });
+
+      const handleReservationUpdate = () => {
+        loadCRUDData();
+      };
+
+      const handleOrderUpdate = () => {
+        loadStats();
+        loadCRUDData();
+      };
+
+      socket.on('reservation:new', handleReservationUpdate);
+      socket.on('reservation:confirmed', handleReservationUpdate);
+      socket.on('reservation:statusUpdated', handleReservationUpdate);
+      
+      socket.on('order:new', handleOrderUpdate);
+      socket.on('order:itemsAdded', handleOrderUpdate);
+      socket.on('order:cancelled', handleOrderUpdate);
+    }
+
+    return () => {
+      if (socket) {
+        socket.off('table:statusUpdated');
+        socket.off('reservation:new');
+        socket.off('reservation:confirmed');
+        socket.off('reservation:statusUpdated');
+        socket.off('order:new');
+        socket.off('order:itemsAdded');
+        socket.off('order:cancelled');
+      }
+    };
+  }, [socket]);
 
   // Menu actions
   const clearMenuForm = () => { setMenuName(''); setMenuPrice(''); setMenuDesc(''); setMenuCat(categories[0]?._id || ''); setMenuIngredients(''); setMenuSpicy('0'); setMenuSeafood(false); setMenuVegetarian(false); };
@@ -148,27 +189,7 @@ export default function ManagerDashboard() {
     try { const res = await tableAPI.deleteTable(id); if (res.success) { toast.success('Đã xóa bàn'); loadCRUDData(); } } catch (err) { toast.error(err.message); }
   };
 
-  // Staff actions
-  const clearUserForm = () => { setUserName(''); setUserEmail(''); setUserPassword(''); setUserPhone(''); setUserRole('waiter'); };
-  const handleUserSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      const res = editUser
-        ? await userAPI.updateUser(editUser._id, { name: userName, phone: userPhone, role: userRole })
-        : await userAPI.createUser({ name: userName, email: userEmail, password: userPassword, phone: userPhone, role: userRole });
-      if (res.success) { toast.success(editUser ? 'Cập nhật nhân viên' : 'Tạo tài khoản thành công'); setShowUserForm(false); setEditUser(null); clearUserForm(); loadCRUDData(); }
-    } catch (err) { toast.error(err.message); }
-  };
-  const handleToggleUser = async (id, cur) => {
-    try { const res = await userAPI.updateUser(id, { isActive: !cur }); if (res.success) { toast.success('Cập nhật trạng thái'); loadCRUDData(); } } catch (err) { toast.error(err.message); }
-  };
-  const handleDeleteUser = async (id) => {
-    if (!confirm('Xóa tài khoản này?')) return;
-    try { const res = await userAPI.deleteUser(id); if (res.success) { toast.success('Đã xóa'); loadCRUDData(); } } catch (err) { toast.error(err.message); }
-  };
 
-  const ROLE_LABELS = { waiter: 'Phục Vụ', manager: 'Quản Lý', admin: 'Admin', customer: 'Khách' };
-  const ROLE_BADGE = { waiter: 'badge-role-waiter', manager: 'badge-role-manager', admin: 'badge-role-admin', customer: 'badge-role-customer' };
 
   const TAB_ITEMS = [
     { id: 'analytics', icon: BarChart3, label: 'Tổng Quan' },
@@ -176,8 +197,12 @@ export default function ManagerDashboard() {
     { id: 'tables', icon: Table2, label: 'Bàn Ăn' },
     { id: 'invoices', icon: FileText, label: 'Hóa Đơn' },
     { id: 'reservations', icon: CalendarDays, label: 'Đặt Bàn' },
-    { id: 'staff', icon: Users, label: 'Nhân Viên' },
+    { id: 'ai', icon: Bot, label: 'Sakura AI' },
   ];
+
+  const occupiedTablesCount = tables.filter(t => t.status === 'occupied').length;
+  const pendingInvoicesCount = invoices.filter(inv => inv.paymentStatus === 'pending').length;
+  const todayReservationsCount = reservations.filter(r => new Date(r.reservationDate).toDateString() === new Date().toDateString()).length;
 
   return (
     <div className="space-y-5">
@@ -189,103 +214,296 @@ export default function ManagerDashboard() {
       {/* Tabs */}
       <div className="flex border-b border-gold/10 gap-0.5 overflow-x-auto no-scrollbar">
         {TAB_ITEMS.map(({ id, icon: Icon, label }) => (
-          <button key={id} onClick={() => setSubTab(id)} className={`luxury-tab ${subTab === id ? 'active' : ''}`}>
+          <button key={id} onClick={() => setTabWrapper(id)} className={`luxury-tab ${subTab === id ? 'active' : ''}`}>
             <Icon size={12} /> {label}
           </button>
         ))}
       </div>
 
-      {/* ── ANALYTICS ── */}
+      {/* ── ANALYTICS (MOCKUP UI) ── */}
       {subTab === 'analytics' && (
         <div className="space-y-6 animate-fade-up">
-          {summary && (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {[
-                { label: 'Doanh Thu Tháng', value: summary.totalRevenue?.toLocaleString('vi-VN') + ' ₫', icon: TrendingUp, trend: '+12%', up: true },
-                { label: 'Hóa Đơn Đã Thu', value: summary.totalInvoices + ' hóa đơn', icon: FileText, trend: '+5%', up: true },
-                { label: 'Đơn Nhà Bếp', value: summary.totalOrders + ' đơn', icon: Utensils, trend: '+8%', up: true },
-                { label: 'TB Hóa Đơn', value: summary.averageOrderValue?.toLocaleString('vi-VN') + ' ₫', icon: BarChart3, trend: '-2%', up: false },
-              ].map((kpi, i) => (
-                <div key={i} className="kpi-card p-5">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="w-9 h-9 rounded-xl bg-gold/10 border border-gold/15 flex items-center justify-center">
-                      <kpi.icon size={16} className="text-gold" />
-                    </div>
-                    <div className={`flex items-center gap-1 text-[10px] font-semibold ${kpi.up ? 'text-green-400' : 'text-red-400'}`}>
-                      {kpi.up ? <ArrowUpRight size={11} /> : <ArrowDownRight size={11} />}
-                      {kpi.trend}
-                    </div>
-                  </div>
-                  <div className="font-serif text-xl text-gold glow-text leading-none">{kpi.value}</div>
-                  <div className="text-[10px] text-muted uppercase tracking-wider mt-1.5">{kpi.label}</div>
-                </div>
-              ))}
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-serif text-cream mb-1">Xin chào, Manager 👋</h1>
+              <p className="text-muted text-xs">Chúc bạn một ngày làm việc hiệu quả!</p>
             </div>
-          )}
+            {/* Top right filters (Hôm nay, Tuần này, Tháng này, Calendar) */}
+            <div className="flex items-center gap-2">
+              <button className="px-4 py-1.5 rounded-md bg-gold/15 border border-gold/30 text-gold text-xs font-medium">Hôm nay</button>
+              <button className="px-4 py-1.5 rounded-md hover:bg-gold/5 text-muted hover:text-cream transition-colors text-xs font-medium">Tuần này</button>
+              <button className="px-4 py-1.5 rounded-md hover:bg-gold/5 text-muted hover:text-cream transition-colors text-xs font-medium">Tháng này</button>
+              <button className="w-8 h-8 rounded-md hover:bg-gold/5 border border-transparent hover:border-gold/20 text-muted hover:text-gold flex items-center justify-center transition-all">
+                <CalendarDays size={14} />
+              </button>
+            </div>
+          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            {/* Revenue chart */}
-            <div className="glass-panel-luxury p-5">
-              <h3 className="section-title mb-4">Doanh Thu 7 Ngày</h3>
-              <div className="h-56">
+          {/* KPI Cards (5 cols) */}
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
+            {/* 1. Doanh thu */}
+            <div className="glass-panel-luxury p-4 relative overflow-hidden group border border-gold/15 hover:border-gold/30 transition-all">
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-xs text-muted">Doanh thu hôm nay</span>
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gold/20 to-wood border border-gold/20 flex items-center justify-center">
+                  <CircleDollarSign size={14} className="text-gold" />
+                </div>
+              </div>
+              <div className="font-serif text-2xl text-gold glow-text mb-2 tracking-wide">
+                28.450.000 <span className="text-[10px] text-muted tracking-normal">VNĐ</span>
+              </div>
+              <div className="text-[10px] text-green-400 flex items-center gap-1">
+                <ArrowUpRight size={10} /> 18.6% <span className="text-muted ml-0.5">so với hôm qua</span>
+              </div>
+            </div>
+
+            {/* 2. Hóa đơn */}
+            <div className="glass-panel-luxury p-4 relative overflow-hidden group border border-gold/15 hover:border-gold/30 transition-all">
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-xs text-muted">Hóa đơn</span>
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gold/20 to-wood border border-gold/20 flex items-center justify-center">
+                  <ScrollText size={14} className="text-gold" />
+                </div>
+              </div>
+              <div className="font-serif text-2xl text-gold glow-text mb-2">128</div>
+              <div className="text-[10px] text-green-400 flex items-center gap-1">
+                <ArrowUpRight size={10} /> 12.5% <span className="text-muted ml-0.5">so với hôm qua</span>
+              </div>
+            </div>
+
+            {/* 3. Đặt bàn */}
+            <div className="glass-panel-luxury p-4 relative overflow-hidden group border border-gold/15 hover:border-gold/30 transition-all">
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-xs text-muted">Đặt bàn hôm nay</span>
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gold/20 to-wood border border-gold/20 flex items-center justify-center">
+                  <CalendarDays size={14} className="text-gold" />
+                </div>
+              </div>
+              <div className="font-serif text-2xl text-gold glow-text mb-2">36</div>
+              <div className="text-[10px] text-green-400 flex items-center gap-1">
+                <ArrowUpRight size={10} /> 8.3% <span className="text-muted ml-0.5">so với hôm qua</span>
+              </div>
+            </div>
+
+            {/* 4. Bàn đang sử dụng */}
+            <div className="glass-panel-luxury p-4 relative overflow-hidden group border border-gold/15 hover:border-gold/30 transition-all">
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-xs text-muted">Bàn đang sử dụng</span>
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gold/20 to-wood border border-gold/20 flex items-center justify-center">
+                  <Users size={14} className="text-gold" />
+                </div>
+              </div>
+              <div className="font-serif text-2xl text-gold glow-text mb-2">
+                22 <span className="text-xs text-muted tracking-normal">/ 40</span>
+              </div>
+              <div className="text-[10px] text-muted">
+                <span className="text-gold">55%</span> bàn đang được sử dụng
+              </div>
+            </div>
+
+            {/* 5. Món bán chạy */}
+            <div className="glass-panel-luxury p-4 relative overflow-hidden group border border-gold/15 hover:border-gold/30 transition-all">
+              <div className="flex justify-between items-start mb-2">
+                <span className="text-xs text-muted">Món bán chạy</span>
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-gold/20 to-wood border border-gold/20 flex items-center justify-center">
+                  <Star size={14} className="text-gold" />
+                </div>
+              </div>
+              <div className="font-serif text-sm text-gold glow-text mb-1 truncate">Sashimi cá hồi</div>
+              <div className="text-[10px] text-muted mt-2">
+                Đã bán <span className="text-cream">42</span> phần
+              </div>
+              {/* Optional tiny decoration image */}
+              <div className="absolute -bottom-4 -right-4 w-16 h-16 bg-gradient-to-tl from-gold/20 to-transparent rounded-full blur-xl"></div>
+            </div>
+          </div>
+
+          {/* Row 2: Charts & Floor plan */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+            {/* Revenue Chart */}
+            <div className="glass-panel-luxury p-5 lg:col-span-2 relative">
+              <div className="flex justify-between items-center mb-6">
+                <div className="flex items-center gap-2">
+                  <CircleDollarSign size={14} className="text-gold" />
+                  <h3 className="text-sm font-semibold text-cream">Doanh thu</h3>
+                </div>
+                <button className="flex items-center gap-1 px-3 py-1 text-[10px] rounded border border-gold/20 text-muted hover:text-gold transition-colors">
+                  Hôm nay <ChevronDown size={10} />
+                </button>
+              </div>
+              <div className="absolute top-16 left-8">
+                <div className="text-[9px] text-muted mb-0.5">(VNĐ)</div>
+              </div>
+              <div className="h-56 mt-2">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={dailyRev.filter(d => d.revenue > 0)}>
+                  <AreaChart data={dailyRev.length > 0 ? dailyRev : [{ day: '00:00', revenue: 0 }, { day: '04:00', revenue: 5000000 }, { day: '08:00', revenue: 12000000 }, { day: '12:00', revenue: 30000000 }, { day: '16:00', revenue: 20000000 }, { day: '20:00', revenue: 45000000 }, { day: '24:00', revenue: 40000000 }]}>
                     <defs>
-                      <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#c9a447" stopOpacity={0.25} />
+                      <linearGradient id="revGradSolid" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#c9a447" stopOpacity={0.4} />
                         <stop offset="95%" stopColor="#c9a447" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(201,164,71,0.06)" />
-                    <XAxis dataKey="day" stroke="#7a6040" fontSize={10} tickFormatter={v => `N.${v}`} />
-                    <YAxis stroke="#7a6040" fontSize={10} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(201,164,71,0.06)" vertical={false} />
+                    <XAxis dataKey="day" stroke="#7a6040" fontSize={9} axisLine={false} tickLine={false} dy={10} />
+                    <YAxis stroke="#7a6040" fontSize={9} axisLine={false} tickLine={false} tickFormatter={v => v/1000000 + 'M'} dx={-10} />
                     <Tooltip content={<CustomTooltip />} />
-                    <Area type="monotone" dataKey="revenue" stroke="#c9a447" strokeWidth={2} fill="url(#revGrad)" name="Doanh thu" />
+                    <Area type="monotone" dataKey="revenue" stroke="#c9a447" strokeWidth={3} fill="url(#revGradSolid)" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
             </div>
 
-            {/* Peak hours */}
-            <div className="glass-panel-luxury p-5">
-              <h3 className="section-title mb-4">Giờ Cao Điểm</h3>
-              <div className="h-56">
+            {/* Donut Chart */}
+            <div className="glass-panel-luxury p-5 relative">
+              <div className="flex items-center gap-2 mb-4">
+                <BarChart3 size={14} className="text-gold" />
+                <h3 className="text-sm font-semibold text-cream">Tỷ lệ loại bàn</h3>
+              </div>
+              <div className="flex flex-col items-center justify-center h-48 relative">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={peakHours}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(201,164,71,0.06)" />
-                    <XAxis dataKey="hour" stroke="#7a6040" fontSize={10} tickFormatter={v => `${v}h`} />
-                    <YAxis stroke="#7a6040" fontSize={10} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Bar dataKey="count" fill="#c9a447" name="Số hóa đơn" radius={[3,3,0,0]} opacity={0.85} />
-                  </BarChart>
+                  <PieChart>
+                    <Pie data={[{name: 'Bàn 2 người', value: 40}, {name: 'Bàn 4 người', value: 35}, {name: 'Bàn 6 người', value: 15}, {name: 'Bàn VIP', value: 10}]} cx="40%" cy="50%" innerRadius={50} outerRadius={70} stroke="none" dataKey="value">
+                      <Cell fill="#c9a447" /> {/* Gold */}
+                      <Cell fill="#e8c87a" /> {/* Light Gold */}
+                      <Cell fill="#4a3b2c" /> {/* Dark Brown */}
+                      <Cell fill="#2a2218" /> {/* Very Dark */}
+                    </Pie>
+                    <Tooltip formatter={v => v + '%'} />
+                  </PieChart>
                 </ResponsiveContainer>
+                {/* Center Text */}
+                <div className="absolute top-1/2 left-[40%] -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+                  <div className="text-xl font-serif text-gold glow-text leading-none">55%</div>
+                  <div className="text-[8px] text-muted mt-1">Đang sử dụng</div>
+                </div>
+                {/* Custom Legend */}
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 space-y-3">
+                   {[
+                     { label: 'Bàn 2 người', pct: '40%', val: '(8 bàn)', color: 'bg-[#c9a447]' },
+                     { label: 'Bàn 4 người', pct: '35%', val: '(7 bàn)', color: 'bg-[#e8c87a]' },
+                     { label: 'Bàn 6 người', pct: '15%', val: '(3 bàn)', color: 'bg-[#4a3b2c]' },
+                     { label: 'Bàn VIP', pct: '10%', val: '(2 bàn)', color: 'bg-[#2a2218]' },
+                   ].map((lg, i) => (
+                     <div key={i} className="flex items-start gap-2">
+                       <span className={`w-2 h-2 rounded-full shrink-0 mt-0.5 ${lg.color}`} />
+                       <div>
+                         <div className="text-[10px] text-cream">{lg.label}</div>
+                         <div className="text-[9px] text-muted">{lg.pct} <span className="opacity-60">{lg.val}</span></div>
+                       </div>
+                     </div>
+                   ))}
+                </div>
               </div>
             </div>
 
-            {/* Top items pie */}
-            <div className="glass-panel-luxury p-5 lg:col-span-2">
-              <h3 className="section-title mb-4">Top 5 Món Bán Chạy</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={topItems} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={4} dataKey="totalRevenue">
-                      {topItems.map((_, i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
-                    </Pie>
-                    <Tooltip formatter={v => v.toLocaleString('vi-VN') + ' ₫'} />
-                  </PieChart>
-                </ResponsiveContainer>
-                <div className="space-y-2.5">
-                  {topItems.map((item, i) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }} />
-                        <span className="text-xs text-cream-dim truncate max-w-[180px]">{item.name}</span>
-                        <span className="text-[10px] text-muted">×{item.totalQuantity}</span>
-                      </div>
-                      <span className="text-xs text-gold font-serif ml-2">{item.totalRevenue?.toLocaleString('vi-VN')} ₫</span>
+            {/* 2D Mini Floor Plan */}
+            <div className="glass-panel-luxury p-5 flex flex-col h-full relative border border-gold/20 overflow-hidden">
+               {/* Background grid effect */}
+               <div className="absolute inset-0 bg-[linear-gradient(rgba(201,164,71,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(201,164,71,0.03)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none"></div>
+               
+               <div className="flex items-center gap-2 mb-4 relative z-10">
+                <Table2 size={14} className="text-gold" />
+                <h3 className="text-sm font-semibold text-cream">Sơ đồ bàn ăn</h3>
+              </div>
+              <div className="flex items-center gap-4 text-[9px] mb-4 relative z-10">
+                 <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500/80 shadow-[0_0_5px_#22c55e]" /> Trống</div>
+                 <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-gold shadow-[0_0_5px_#c9a447]" /> Đang sử dụng</div>
+                 <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-blue-500/80 shadow-[0_0_5px_#3b82f6]" /> Đã đặt</div>
+                 <div className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500/80 shadow-[0_0_5px_#ef4444]" /> Bảo trì</div>
+              </div>
+              <div className="flex-1 relative border border-gold/10 rounded-lg bg-black/40 p-3 overflow-hidden shadow-inner">
+                 {/* Decorative Plants/Zones */}
+                 <div className="absolute top-2 right-2 w-16 h-16 bg-green-900/20 rounded-full blur-xl pointer-events-none"></div>
+                 <div className="absolute bottom-2 left-2 w-20 h-20 bg-green-900/20 rounded-full blur-xl pointer-events-none"></div>
+                 
+                 {/* 2D Grid Layout Hardcoded for mockup exactness */}
+                 <div className="w-full h-full relative min-h-[180px]">
+                    {/* Row 1 */}
+                    <div className="absolute top-[10%] left-[5%] w-[15%] h-[20%] bg-green-500/20 border border-green-500/50 rounded flex items-center justify-center text-[10px] text-green-400 font-serif shadow-[0_0_10px_rgba(34,197,94,0.2)]">01</div>
+                    <div className="absolute top-[10%] left-[25%] w-[15%] h-[20%] bg-gold/20 border border-gold/50 rounded flex items-center justify-center text-[10px] text-gold font-serif shadow-[0_0_10px_rgba(201,164,71,0.2)]">02</div>
+                    <div className="absolute top-[5%] left-[45%] w-[30%] h-[30%] bg-gold/20 border border-gold/50 rounded-full flex items-center justify-center text-[10px] text-gold font-serif shadow-[0_0_10px_rgba(201,164,71,0.2)]">03</div>
+                    <div className="absolute top-[10%] left-[80%] w-[15%] h-[20%] bg-green-500/20 border border-green-500/50 rounded flex items-center justify-center text-[10px] text-green-400 font-serif shadow-[0_0_10px_rgba(34,197,94,0.2)]">04</div>
+
+                    {/* Middle Section with VIP */}
+                    <div className="absolute top-[40%] left-[15%] w-[15%] h-[20%] bg-blue-500/20 border border-blue-500/50 rounded flex items-center justify-center text-[10px] text-blue-400 font-serif shadow-[0_0_10px_rgba(59,130,246,0.2)]">05</div>
+                    <div className="absolute top-[40%] left-[35%] w-[45%] h-[35%] bg-red-900/40 border border-red-500/50 rounded-lg flex items-center justify-center flex-col shadow-[0_0_15px_rgba(239,68,68,0.15)]">
+                       <span className="text-[10px] text-red-400 font-serif">VIP 01</span>
+                       <span className="text-[7px] text-red-400/60 mt-1">Bảo trì</span>
                     </div>
-                  ))}
+                    <div className="absolute top-[45%] left-[85%] w-[10%] h-[25%] bg-green-500/20 border border-green-500/50 rounded flex items-center justify-center text-[9px] text-green-400 font-serif shadow-[0_0_10px_rgba(34,197,94,0.2)]">07</div>
+
+                    {/* Bottom Row */}
+                    <div className="absolute top-[75%] left-[5%] w-[15%] h-[20%] bg-gold/20 border border-gold/50 rounded flex items-center justify-center text-[10px] text-gold font-serif shadow-[0_0_10px_rgba(201,164,71,0.2)]">08</div>
+                    <div className="absolute top-[80%] left-[25%] w-[15%] h-[15%] bg-green-500/20 border border-green-500/50 rounded flex items-center justify-center text-[10px] text-green-400 font-serif shadow-[0_0_10px_rgba(34,197,94,0.2)]">09</div>
+                    <div className="absolute top-[80%] left-[45%] w-[15%] h-[15%] bg-green-500/20 border border-green-500/50 rounded flex items-center justify-center text-[10px] text-green-400 font-serif shadow-[0_0_10px_rgba(34,197,94,0.2)]">10</div>
+                    <div className="absolute top-[75%] left-[65%] w-[20%] h-[20%] bg-blue-500/20 border border-blue-500/50 rounded-full flex items-center justify-center text-[10px] text-blue-400 font-serif shadow-[0_0_10px_rgba(59,130,246,0.2)]">11</div>
+                 </div>
+              </div>
+              <div className="text-center mt-2 text-[8px] text-muted tracking-[0.2em] uppercase">Lối vào</div>
+            </div>
+          </div>
+
+          {/* Row 3: Lists */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Đặt bàn mới nhất */}
+            <div className="glass-panel-luxury p-5">
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-2">
+                  <CalendarDays size={14} className="text-gold" />
+                  <h3 className="text-sm font-semibold text-cream">Đặt bàn mới nhất</h3>
                 </div>
+                <button className="text-[10px] text-gold hover:text-gold-light transition-colors">Xem tất cả</button>
+              </div>
+              <div className="space-y-1">
+                {[
+                  { time: '10:15', name: 'Nguyễn Văn A', details: '4 người • 19:00', status: 'Đã xác nhận', badge: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+                  { time: '10:08', name: 'Trần Thị B', details: '2 người • 18:30', status: 'Đã xác nhận', badge: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+                  { time: '09:50', name: 'Lê Văn C', details: '6 người • 20:00', status: 'Chờ xác nhận', badge: 'bg-gold/20 text-gold border-gold/30' },
+                  { time: '09:30', name: 'Phạm Thị D', details: '2 người • 17:30', status: 'Đã xác nhận', badge: 'bg-blue-500/20 text-blue-400 border-blue-500/30' },
+                  { time: '09:20', name: 'Hoàng Văn E', details: '4 người • 19:30', status: 'Chờ xác nhận', badge: 'bg-gold/20 text-gold border-gold/30' },
+                ].map((r, i) => (
+                  <div key={i} className="flex items-center justify-between py-2 border-b border-gold/5 last:border-0 hover:bg-gold/5 px-2 -mx-2 rounded transition-colors cursor-pointer">
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] text-muted w-8">{r.time}</span>
+                      <div className="flex items-center gap-2">
+                        <Users size={12} className="text-muted" />
+                        <span className="text-xs text-cream truncate w-24">{r.name}</span>
+                      </div>
+                    </div>
+                    <span className="text-[10px] text-muted w-24 text-center">{r.details}</span>
+                    <span className={`text-[9px] px-2 py-0.5 rounded border ${r.badge} whitespace-nowrap`}>{r.status}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Hóa đơn gần đây */}
+            <div className="glass-panel-luxury p-5">
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-2">
+                  <ScrollText size={14} className="text-gold" />
+                  <h3 className="text-sm font-semibold text-cream">Hóa đơn gần đây</h3>
+                </div>
+                <button className="text-[10px] text-gold hover:text-gold-light transition-colors">Xem tất cả</button>
+              </div>
+              <div className="space-y-1">
+                {[
+                  { id: '#HD1287', time: '10:25', amount: '2.450.000 VNĐ', status: 'Đã thanh toán', badge: 'bg-green-500/20 text-green-400 border-green-500/30' },
+                  { id: '#HD1286', time: '10:20', amount: '1.850.000 VNĐ', status: 'Đã thanh toán', badge: 'bg-green-500/20 text-green-400 border-green-500/30' },
+                  { id: '#HD1285', time: '10:15', amount: '3.650.000 VNĐ', status: 'Đã thanh toán', badge: 'bg-green-500/20 text-green-400 border-green-500/30' },
+                  { id: '#HD1284', time: '10:10', amount: '2.120.000 VNĐ', status: 'Chờ thanh toán', badge: 'bg-gold/20 text-gold border-gold/30' },
+                  { id: '#HD1283', time: '09:58', amount: '1.320.000 VNĐ', status: 'Đã thanh toán', badge: 'bg-green-500/20 text-green-400 border-green-500/30' },
+                ].map((inv, i) => (
+                  <div key={i} className="flex items-center justify-between py-2 border-b border-gold/5 last:border-0 hover:bg-gold/5 px-2 -mx-2 rounded transition-colors cursor-pointer">
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] text-muted w-12">{inv.id}</span>
+                      <span className="text-[10px] text-muted">{inv.time}</span>
+                    </div>
+                    <span className="text-xs font-serif text-gold w-24 text-right">{inv.amount}</span>
+                    <span className={`text-[9px] px-2 py-0.5 rounded border ${inv.badge} whitespace-nowrap`}>{inv.status}</span>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -404,12 +622,18 @@ export default function ManagerDashboard() {
 
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
             {tables.map(t => {
-              const cfg = { available: { dot: 'bg-green-400', badge: 'status-available', label: 'Trống', glow: 'table-status-empty' }, occupied: { dot: 'bg-red-400', badge: 'status-occupied', label: 'Có khách', glow: 'table-status-serving' }, reserved: { dot: 'bg-gold', badge: 'status-reserved', label: 'Đã đặt', glow: 'table-status-booked' } }[t.status] || { dot: 'bg-muted', badge: '', label: t.status };
+              const STATUS_CFG = {
+                available: { dot: 'bg-green-400', badge: 'status-available', label: 'Trống', glow: 'table-status-empty' },
+                serving:   { dot: 'bg-red-400', badge: 'status-occupied', label: 'Có khách', glow: 'table-status-serving' },
+                reserved:  { dot: 'bg-gold', badge: 'status-reserved', label: 'Đã đặt', glow: 'table-status-booked' },
+                cleaning:  { dot: 'bg-cream-dim', badge: 'status-clearing', label: 'Cần dọn', glow: 'table-status-clearing' },
+              };
+              const cfg = STATUS_CFG[t.status] || { dot: 'bg-muted', badge: '', label: t.status, glow: '' };
               return (
-                <div key={t._id} className={`relative glass-card p-4 border-2 group ${cfg.glow}`}>
+                <div key={t._id} className={`relative glass-card p-4 border-2 group ${cfg.glow || ''}`}>
                   <button onClick={() => handleDeleteTable(t._id)} className="absolute top-2 right-2 w-5 h-5 rounded flex items-center justify-center text-muted hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"><Trash2 size={10} /></button>
                   <div className="flex items-center gap-2 mb-2">
-                    <div className={`w-2 h-2 rounded-full ${cfg.dot} ${t.status === 'occupied' ? 'animate-pulse' : ''}`} />
+                    <div className={`w-2 h-2 rounded-full ${cfg.dot} ${t.status === 'serving' ? 'animate-pulse' : ''}`} />
                     <span className="font-serif text-lg text-gold">{t.tableNumber}</span>
                   </div>
                   <div className="text-[11px] text-muted">{t.capacity} người · {t.area}</div>
@@ -456,11 +680,11 @@ export default function ManagerDashboard() {
           <h3 className="section-title">Quản Lý Đặt Bàn <span className="text-muted/60 normal-case text-xs ml-2">({reservations.length} lượt)</span></h3>
           <div className="glass-panel-luxury overflow-hidden">
             <table className="luxury-table">
-              <thead><tr><th>Khách hàng</th><th>Ngày</th><th>Giờ</th><th className="text-center">Số khách</th><th className="text-center">Bàn</th><th>Ghi chú</th><th className="text-center">Trạng thái</th></tr></thead>
+              <thead><tr><th>Khách hàng</th><th>Ngày</th><th>Giờ</th><th className="text-center">Số khách</th><th className="text-center">Bàn</th><th>Ghi chú</th><th className="text-center">Trạng thái</th><th className="text-right">Thao tác</th></tr></thead>
               <tbody>
                 {reservations.map(r => (
                   <tr key={r._id}>
-                    <td className="font-serif text-cream">{r.user?.name || r.name}</td>
+                    <td className="font-serif text-cream">{r.customerName || r.customer?.name || '—'}</td>
                     <td>{new Date(r.reservationDate).toLocaleDateString('vi-VN')}</td>
                     <td>{r.reservationTime}</td>
                     <td className="text-center text-gold">{r.numberOfGuests}</td>
@@ -470,6 +694,35 @@ export default function ManagerDashboard() {
                       <span className={`status-badge ${ r.status === 'confirmed' ? 'status-ready' : r.status === 'pending' ? 'status-pending' : r.status === 'cancelled' ? 'status-occupied' : 'status-clearing'}`}>
                         {r.status === 'confirmed' ? 'Đã xác nhận' : r.status === 'pending' ? 'Chờ xác nhận' : r.status === 'cancelled' ? 'Đã hủy' : 'Hoàn thành'}
                       </span>
+                    </td>
+                    <td className="text-right">
+                      <div className="flex gap-1 justify-end">
+                        {r.status === 'pending' && (
+                          <button
+                            onClick={async () => {
+                              try {
+                                const res = await reservationAPI.confirm(r._id, r.table?._id);
+                                if (res.success) { toast.success('Đã xác nhận đặt bàn'); loadCRUDData(); }
+                              } catch (err) { toast.error(err.message); }
+                            }}
+                            className="w-7 h-7 rounded border border-green-500/25 text-muted hover:text-green-400 hover:border-green-500/40 flex items-center justify-center transition-all text-[10px]" title="Xác nhận">
+                            ✓
+                          </button>
+                        )}
+                        {['pending', 'confirmed'].includes(r.status) && (
+                          <button
+                            onClick={async () => {
+                              if (!confirm('Hủy đặt bàn này?')) return;
+                              try {
+                                const res = await reservationAPI.cancel(r._id);
+                                if (res.success) { toast.success('Đã hủy đặt bàn'); loadCRUDData(); }
+                              } catch (err) { toast.error(err.message); }
+                            }}
+                            className="w-7 h-7 rounded border border-wine/15 text-muted hover:text-red-400 hover:border-wine/30 flex items-center justify-center transition-all text-[10px]" title="Hủy">
+                            ✕
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -481,66 +734,11 @@ export default function ManagerDashboard() {
           </div>
         </div>
       )}
-
-      {/* ── STAFF ── */}
-      {subTab === 'staff' && (
-        <div className="space-y-5 animate-fade-up">
-          <div className="flex justify-between items-center">
-            <h3 className="section-title">Quản Lý Nhân Viên <span className="text-muted/60 normal-case text-xs ml-2">({users.filter(u => u.role !== 'customer').length} nhân viên)</span></h3>
-            <button onClick={() => { setEditUser(null); clearUserForm(); setShowUserForm(true); }} className="btn-gold flex items-center gap-1.5">
-              <Plus size={12} /> Tạo Tài Khoản
-            </button>
-          </div>
-
-          {showUserForm && (
-            <form onSubmit={handleUserSubmit} className="glass-panel-luxury p-6 space-y-4 max-w-2xl">
-              <h4 className="section-title">{editUser ? 'Chỉnh sửa nhân viên' : 'Tạo tài khoản mới'}</h4>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div><label className="luxury-label">Họ và tên</label><input className="luxury-input" value={userName} onChange={e => setUserName(e.target.value)} required /></div>
-                <div><label className="luxury-label">Email</label><input type="email" className="luxury-input" value={userEmail} onChange={e => setUserEmail(e.target.value)} disabled={!!editUser} required={!editUser} /></div>
-                {!editUser && <div><label className="luxury-label">Mật khẩu</label><input type="password" className="luxury-input" value={userPassword} onChange={e => setUserPassword(e.target.value)} required /></div>}
-                <div><label className="luxury-label">Số điện thoại</label><input className="luxury-input" value={userPhone} onChange={e => setUserPhone(e.target.value)} /></div>
-                <div><label className="luxury-label">Vai trò</label>
-                  <select className="luxury-input luxury-select" value={userRole} onChange={e => setUserRole(e.target.value)}>
-                    <option value="waiter">Phục Vụ</option>
-                    <option value="manager">Quản Lý</option>
-                  </select>
-                </div>
-              </div>
-              <div className="flex gap-2 justify-end pt-2">
-                <button type="button" onClick={() => setShowUserForm(false)} className="btn-ghost">Hủy</button>
-                <button type="submit" className="btn-gold">Lưu</button>
-              </div>
-            </form>
-          )}
-
-          <div className="glass-panel-luxury overflow-hidden">
-            <table className="luxury-table">
-              <thead><tr><th>Nhân viên</th><th>Liên hệ</th><th className="text-center">Vai trò</th><th className="text-center">Trạng thái</th><th className="text-right">Thao tác</th></tr></thead>
-              <tbody>
-                {users.filter(u => u.role !== 'customer').map(u => (
-                  <tr key={u._id}>
-                    <td><div className="flex items-center gap-2.5"><div className="w-7 h-7 rounded-full bg-wood border border-gold/20 flex items-center justify-center font-serif text-gold text-xs shrink-0">{u.name?.charAt(0)}</div><span className="font-serif text-cream">{u.name}</span></div></td>
-                    <td><div className="text-[11px]">{u.email}</div><div className="text-[10px] text-muted">{u.phone}</div></td>
-                    <td className="text-center"><span className={`status-badge ${ROLE_BADGE[u.role] || 'text-muted'}`}>{ROLE_LABELS[u.role] || u.role}</span></td>
-                    <td className="text-center">
-                      <button onClick={() => handleToggleUser(u._id, u.isActive)} className={`status-badge cursor-pointer ${u.isActive ? 'status-available' : 'status-occupied'}`}>
-                        {u.isActive ? 'Hoạt động' : 'Đã khóa'}
-                      </button>
-                    </td>
-                    <td className="text-right">
-                      <div className="flex gap-1 justify-end">
-                        <button onClick={() => { setEditUser(u); setUserName(u.name); setUserEmail(u.email); setUserPhone(u.phone||''); setUserRole(u.role); setShowUserForm(true); }} className="w-7 h-7 rounded border border-gold/15 text-muted hover:text-gold hover:border-gold/30 flex items-center justify-center transition-all"><Edit size={12} /></button>
-                        <button onClick={() => handleDeleteUser(u._id)} className="w-7 h-7 rounded border border-wine/15 text-muted hover:text-red-400 hover:border-wine/30 flex items-center justify-center transition-all"><Trash2 size={12} /></button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+      {/* ── AI ── */}
+      {subTab === 'ai' && (
+        <AIAssistantDashboard user={user} />
       )}
+
     </div>
   );
 }

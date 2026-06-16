@@ -1,23 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Home, Calendar, Clock, Ticket, Star, User, Settings, LogOut,
   Phone, Mail, MapPin, Instagram, Facebook, Heart,
-  ChevronRight, ArrowRight, Sparkles, CheckCircle2, ChevronDown, Bot
+  ChevronRight, ArrowRight, Sparkles, CheckCircle2, ChevronDown, Bot,
+  X, AlertCircle, RefreshCw, Loader2
 } from 'lucide-react';
 
 import spaceGallery from '../../../assets/space_gallery.png';
 import sushiDish from '../../../assets/sushi_dish.png';
 import wagyuDish from '../../../assets/wagyu.png';
-
-const MOCK_UPCOMING = {
-  room: "Sakura Premium Room",
-  date: "15/06/2026",
-  time: "19:00",
-  guests: "4 Khách",
-  location: "Tầng 3 - Phòng VIP 2",
-  status: "ĐÃ XÁC NHẬN"
-};
+import { reservationAPI } from '../../../api';
+import toast from 'react-hot-toast';
+import { FloatingAIChat } from '../../../components/layout/DashboardLayout';
 
 const MOCK_SUGGESTIONS = [
   { id: 1, name: "Sushi Omakase", image: sushiDish },
@@ -25,25 +20,101 @@ const MOCK_SUGGESTIONS = [
   { id: 3, name: "Sashimi Deluxe", image: sushiDish },
 ];
 
-const MOCK_JOURNEY = [
-  { step: 'Đặt bàn', date: '15/06', completed: true },
-  { step: 'Dùng bữa', date: '15/06', completed: true },
-  { step: 'Thanh toán', date: '15/06', completed: true },
-  { step: 'Tích điểm', date: '15/06', completed: true },
-];
-
 const SIDEBAR_NAV = [
-  { id: 'home', label: 'Trang Chủ', icon: Home, active: true },
+  { id: 'home', label: 'Trang Chủ', icon: Home },
   { id: 'booking', label: 'Đặt Bàn', icon: Calendar },
   { id: 'history', label: 'Lịch Sử Đặt Bàn', icon: Clock },
-  { id: 'offers', label: 'Ưu Đãi & Voucher', icon: Ticket },
-  { id: 'points', label: 'Điểm Thưởng', icon: Star },
   { id: 'profile', label: 'Hồ Sơ Cá Nhân', icon: User },
-  { id: 'settings', label: 'Cài Đặt', icon: Settings },
 ];
+
+const STATUS_CONFIG = {
+  pending:   { label: 'Chờ xác nhận', cls: 'bg-gold/15 text-gold border-gold/25' },
+  confirmed: { label: 'Đã xác nhận',  cls: 'bg-green-500/15 text-green-400 border-green-500/25' },
+  cancelled: { label: 'Đã hủy',        cls: 'bg-red-500/15 text-red-400 border-red-500/25' },
+  completed: { label: 'Hoàn thành',    cls: 'bg-blue-500/15 text-blue-400 border-blue-500/25' },
+};
+
+const today = new Date().toISOString().split('T')[0];
 
 export default function CustomerPortal({ user, onLogout }) {
   const navigate = useNavigate();
+  const [activeNav, setActiveNav] = useState('home');
+
+  // Booking form state
+  const [form, setForm] = useState({
+    customerName: user?.name || '',
+    phone: user?.phone || '',
+    numberOfGuests: '2',
+    reservationDate: today,
+    reservationTime: '18:00',
+    note: '',
+  });
+  const [bookingLoading, setBookingLoading] = useState(false);
+  const [bookingSuccess, setBookingSuccess] = useState(null);
+
+  // History state
+  const [reservations, setReservations] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [cancellingId, setCancellingId] = useState(null);
+
+  const loadHistory = async () => {
+    setHistoryLoading(true);
+    try {
+      const res = await reservationAPI.getReservations();
+      if (res.success) setReservations(res.data);
+    } catch (err) {
+      toast.error('Không thể tải lịch sử: ' + err.message);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeNav === 'history') loadHistory();
+  }, [activeNav]);
+
+  const handleBook = async (e) => {
+    e.preventDefault();
+    if (!form.customerName || !form.phone || !form.numberOfGuests || !form.reservationDate || !form.reservationTime) {
+      toast.error('Vui lòng điền đầy đủ thông tin');
+      return;
+    }
+    setBookingLoading(true);
+    try {
+      const res = await reservationAPI.create(form);
+      if (res.success) {
+        setBookingSuccess(res.data);
+        toast.success('Đặt bàn thành công! Chúng tôi sẽ xác nhận sớm.');
+        setForm(prev => ({ ...prev, note: '' }));
+      }
+    } catch (err) {
+      toast.error(err.message || 'Không thể đặt bàn');
+    } finally {
+      setBookingLoading(false);
+    }
+  };
+
+  const handleCancel = async (id) => {
+    if (!confirm('Bạn có chắc muốn hủy đặt bàn này?')) return;
+    setCancellingId(id);
+    try {
+      const res = await reservationAPI.cancel(id);
+      if (res.success) {
+        toast.success('Đã hủy đặt bàn');
+        loadHistory();
+      }
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
+  // Upcoming reservations for home page
+  const upcomingReservations = reservations.filter(r =>
+    ['pending', 'confirmed'].includes(r.status) &&
+    new Date(r.reservationDate) >= new Date()
+  );
 
   return (
     <div className="flex h-screen w-full bg-[#070503] text-[#f2e8d5] overflow-hidden font-sans">
@@ -62,13 +133,14 @@ export default function CustomerPortal({ user, onLogout }) {
           {SIDEBAR_NAV.map(nav => (
             <button 
               key={nav.id}
+              onClick={() => setActiveNav(nav.id)}
               className={`w-full flex items-center gap-4 px-5 py-3.5 rounded-xl transition-all text-sm font-medium
-                ${nav.active 
+                ${activeNav === nav.id
                   ? 'bg-gradient-to-r from-[#c9a447]/10 to-transparent border-l-2 border-[#c9a447] text-[#c9a447]' 
                   : 'text-[#8c7355] hover:text-[#c9a447] hover:bg-[#c9a447]/5 border-l-2 border-transparent'
                 }`}
             >
-              <nav.icon size={18} className={nav.active ? 'text-[#c9a447] drop-shadow-[0_0_8px_rgba(201,164,71,0.5)]' : ''} />
+              <nav.icon size={18} className={activeNav === nav.id ? 'text-[#c9a447] drop-shadow-[0_0_8px_rgba(201,164,71,0.5)]' : ''} />
               <span className="tracking-wide">{nav.label}</span>
             </button>
           ))}
@@ -113,9 +185,6 @@ export default function CustomerPortal({ user, onLogout }) {
             <div className="flex gap-3 pt-3 border-t border-[#c9a447]/10 relative z-10">
               <button className="w-8 h-8 rounded-full bg-[#15110d] border border-[#c9a447]/20 flex items-center justify-center text-[#c9a447] hover:bg-[#c9a447] hover:text-[#070503] transition-colors"><Instagram size={14}/></button>
               <button className="w-8 h-8 rounded-full bg-[#15110d] border border-[#c9a447]/20 flex items-center justify-center text-[#c9a447] hover:bg-[#c9a447] hover:text-[#070503] transition-colors"><Facebook size={14}/></button>
-              <div className="w-8 h-8 rounded-full bg-[#15110d] border border-[#c9a447]/20 flex items-center justify-center text-[#c9a447] hover:bg-[#c9a447] hover:text-[#070503] transition-colors cursor-pointer font-bold text-xs">
-                TikTok
-              </div>
             </div>
           </div>
         </div>
@@ -131,199 +200,108 @@ export default function CustomerPortal({ user, onLogout }) {
         {/* Topbar */}
         <div className="sticky top-0 z-30 px-10 py-5 flex items-center justify-center">
           <div className="flex items-center gap-12 text-sm font-medium tracking-wide">
-            <button className="text-[#c9a447] border-b-2 border-[#c9a447] pb-1">Trang Chủ</button>
-            <button className="text-[#8c7355] hover:text-[#f2e8d5] transition-colors">Đặt Bàn</button>
-            <button className="text-[#8c7355] hover:text-[#f2e8d5] transition-colors">Lịch Sử</button>
-            <button className="text-[#8c7355] hover:text-[#f2e8d5] transition-colors">Ưu Đãi</button>
-            <button className="text-[#8c7355] hover:text-[#f2e8d5] transition-colors">Hồ Sơ</button>
+            {SIDEBAR_NAV.map(nav => (
+              <button key={nav.id} onClick={() => setActiveNav(nav.id)}
+                className={`transition-colors ${activeNav === nav.id ? 'text-[#c9a447] border-b-2 border-[#c9a447] pb-1' : 'text-[#8c7355] hover:text-[#f2e8d5]'}`}>
+                {nav.label}
+              </button>
+            ))}
           </div>
           
           <div className="absolute right-10 flex items-center gap-3 glass-panel px-4 py-2 rounded-full cursor-pointer hover:bg-[#c9a447]/10 transition-colors">
             <div className="text-right">
               <div className="text-[10px] text-[#8c7355] mb-0.5">Xin chào,</div>
-              <div className="text-xs font-semibold text-[#f2e8d5]">{user?.name || "Nguyễn Thanh Tùng"}</div>
+              <div className="text-xs font-semibold text-[#f2e8d5]">{user?.name || "Khách"}</div>
             </div>
             <ChevronDown size={14} className="text-[#8c7355] ml-1" />
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#c9a447] to-[#8c7355] border-2 border-[#c9a447]/30 flex items-center justify-center font-serif text-[#070503] text-sm overflow-hidden ml-2">
-               {/* User Avatar Placeholder */}
-               <img src={`https://ui-avatars.com/api/?name=${user?.name || 'Tung'}&background=c9a447&color=070503&bold=true`} alt="avatar" />
+               <img src={`https://ui-avatars.com/api/?name=${user?.name || 'Sakura'}&background=c9a447&color=070503&bold=true`} alt="avatar" />
             </div>
           </div>
         </div>
 
         {/* Dashboard Body */}
-        <div className="px-10 max-w-[1200px] mx-auto mt-6 relative z-10 space-y-6">
-          
-          {/* Welcome & Stats Row */}
-          <div className="flex justify-between items-end gap-6 mb-8">
-            <div className="flex-1">
-              <p className="text-[#8c7355] text-lg font-serif mb-1">Chào mừng trở lại</p>
-              <h1 className="font-serif text-4xl text-[#c9a447] glow-text tracking-wide mb-4">{user?.name || "Nguyễn Thanh Tùng"}</h1>
-              <p className="text-sm text-[#a68a61]">
-                Bạn có <span className="text-[#f2e8d5] font-semibold">2 lượt đặt bàn sắp tới</span> <br/>
-                và <span className="text-[#f2e8d5] font-semibold">3 ưu đãi đang chờ sử dụng</span>
-              </p>
-              <div className="flex gap-4 mt-6">
-                <button className="bg-gradient-to-r from-[#c9a447] to-[#b8953c] text-[#070503] font-bold text-xs uppercase tracking-widest px-6 py-3 rounded hover:scale-105 transition-transform flex items-center gap-2">
-                  <Calendar size={14}/> ĐẶT BÀN MỚI
-                </button>
-                <button className="border border-[#c9a447]/30 text-[#c9a447] font-bold text-xs uppercase tracking-widest px-6 py-3 rounded hover:bg-[#c9a447]/10 transition-colors">
-                  XEM LỊCH SỬ
-                </button>
-              </div>
-            </div>
+        <div className="px-10 max-w-[1200px] mx-auto mt-6 relative z-10">
 
-            {/* 4 Quick Stats */}
-            <div className="flex gap-4">
-              {/* Đặt bàn */}
-              <div className="glass-panel-luxury w-[140px] p-5 flex flex-col items-center justify-center text-center">
-                <div className="w-10 h-10 rounded-full bg-[#c9a447]/10 flex items-center justify-center mb-3">
-                  <Clock size={18} className="text-[#c9a447]"/>
-                </div>
-                <div className="text-[10px] text-[#8c7355] uppercase tracking-widest font-semibold mb-1">ĐẶT BÀN</div>
-                <div className="text-2xl font-serif text-[#f2e8d5] mb-1">12</div>
-                <div className="text-[10px] text-[#7a6040]">Lượt</div>
-                <button className="text-[10px] text-[#c9a447] mt-3 flex items-center gap-1 hover:text-white transition-colors">Xem chi tiết <ArrowRight size={10}/></button>
-              </div>
-              
-              {/* Điểm thưởng */}
-              <div className="glass-panel-luxury w-[140px] p-5 flex flex-col items-center justify-center text-center">
-                <div className="w-10 h-10 rounded-full bg-[#c9a447]/10 flex items-center justify-center mb-3">
-                  <Star size={18} className="text-[#c9a447]"/>
-                </div>
-                <div className="text-[10px] text-[#8c7355] uppercase tracking-widest font-semibold mb-1">ĐIỂM THƯỞNG</div>
-                <div className="text-2xl font-serif text-[#f2e8d5] mb-1">2.450</div>
-                <div className="text-[10px] text-[#7a6040]">Điểm</div>
-                <button className="text-[10px] text-[#c9a447] mt-3 flex items-center gap-1 hover:text-white transition-colors">Xem chi tiết <ArrowRight size={10}/></button>
-              </div>
-
-              {/* Voucher */}
-              <div className="glass-panel-luxury w-[140px] p-5 flex flex-col items-center justify-center text-center">
-                <div className="w-10 h-10 rounded-full bg-[#c9a447]/10 flex items-center justify-center mb-3">
-                  <Ticket size={18} className="text-[#c9a447]"/>
-                </div>
-                <div className="text-[10px] text-[#8c7355] uppercase tracking-widest font-semibold mb-1">VOUCHER</div>
-                <div className="text-2xl font-serif text-[#f2e8d5] mb-1">3</div>
-                <div className="text-[10px] text-[#7a6040]">Ưu đãi</div>
-                <button className="text-[10px] text-[#c9a447] mt-3 flex items-center gap-1 hover:text-white transition-colors">Xem chi tiết <ArrowRight size={10}/></button>
-              </div>
-
-              {/* Thành viên */}
-              <div className="glass-panel-luxury w-[140px] p-5 flex flex-col items-center justify-center text-center">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#c9a447] to-[#7a6040] flex items-center justify-center mb-3 shadow-[0_0_15px_rgba(201,164,71,0.3)]">
-                  <User size={18} className="text-[#070503]"/>
-                </div>
-                <div className="text-[10px] text-[#8c7355] uppercase tracking-widest font-semibold mb-1">THÀNH VIÊN</div>
-                <div className="text-2xl font-serif text-[#c9a447] glow-text mb-1">Gold</div>
-                <div className="text-[10px] text-[#7a6040]">Member</div>
-                <button className="text-[10px] text-[#c9a447] mt-3 flex items-center gap-1 hover:text-white transition-colors">Xem chi tiết <ArrowRight size={10}/></button>
-              </div>
-            </div>
-          </div>
-
-          {/* MAIN WIDGETS GRID */}
-          <div className="grid grid-cols-12 gap-6">
-            
-            {/* LEFT COLUMN (8 cols) */}
-            <div className="col-span-12 xl:col-span-8 space-y-6">
-              
-              {/* Đặt bàn sắp tới */}
-              <div className="glass-panel-luxury p-6 rounded-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-6 opacity-20 pointer-events-none">
-                  <span className="text-6xl font-serif text-[#c9a447]">🌸</span>
-                </div>
-                <h3 className="section-title mb-5 flex items-center gap-2 text-sm"><Calendar size={16}/> ĐẶT BÀN SẮP TỚI</h3>
-                
-                <div className="flex flex-col md:flex-row gap-6">
-                  {/* Image */}
-                  <div className="relative w-full md:w-[320px] h-[200px] rounded-xl overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.8)] border border-[#c9a447]/20 shrink-0">
-                    <img src={spaceGallery} className="w-full h-full object-cover" alt="Room" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
-                    <div className="absolute bottom-3 right-3 flex gap-2">
-                       <div className="w-6 h-6 rounded-full bg-black/50 backdrop-blur border border-white/20 flex items-center justify-center text-white cursor-pointer hover:bg-[#c9a447] hover:text-black transition-colors">&larr;</div>
-                       <div className="w-6 h-6 rounded-full bg-black/50 backdrop-blur border border-white/20 flex items-center justify-center text-white cursor-pointer hover:bg-[#c9a447] hover:text-black transition-colors">&rarr;</div>
-                    </div>
-                    {/* Pagination dots */}
-                    <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-                       <div className="w-1.5 h-1.5 rounded-full bg-[#c9a447]"></div>
-                       <div className="w-1.5 h-1.5 rounded-full bg-white/40"></div>
-                       <div className="w-1.5 h-1.5 rounded-full bg-white/40"></div>
-                    </div>
-                  </div>
-
-                  {/* Details */}
-                  <div className="flex-1 flex flex-col">
-                    <div className="flex justify-between items-start mb-2">
-                       <div>
-                         <h4 className="font-serif text-2xl text-[#f2e8d5] mb-4">{MOCK_UPCOMING.room}</h4>
-                       </div>
-                       <span className="text-[9px] font-bold tracking-wider uppercase bg-green-500/10 text-green-400 border border-green-500/20 px-3 py-1.5 rounded-full">
-                         {MOCK_UPCOMING.status}
-                       </span>
-                    </div>
-
-                    <div className="space-y-3 flex-1">
-                      <div className="flex items-center gap-3 text-sm">
-                        <Calendar size={16} className="text-[#c9a447]"/> <span className="text-[#a68a61]">{MOCK_UPCOMING.date}</span>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm">
-                        <Clock size={16} className="text-[#c9a447]"/> <span className="text-[#a68a61]">{MOCK_UPCOMING.time}</span>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm">
-                        <User size={16} className="text-[#c9a447]"/> <span className="text-[#a68a61]">{MOCK_UPCOMING.guests}</span>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm">
-                        <MapPin size={16} className="text-[#c9a447]"/> <span className="text-[#a68a61]">{MOCK_UPCOMING.location}</span>
-                      </div>
-                    </div>
-
-                    <button className="mt-4 border border-[#c9a447]/40 text-[#c9a447] font-semibold text-xs uppercase tracking-widest px-6 py-3 rounded hover:bg-[#c9a447]/10 transition-colors w-max">
-                      CHI TIẾT ĐẶT BÀN
+          {/* ===== HOME ===== */}
+          {activeNav === 'home' && (
+            <div className="space-y-6">
+              {/* Welcome & Stats Row */}
+              <div className="flex justify-between items-end gap-6 mb-8">
+                <div className="flex-1">
+                  <p className="text-[#8c7355] text-lg font-serif mb-1">Chào mừng trở lại</p>
+                  <h1 className="font-serif text-4xl text-[#c9a447] glow-text tracking-wide mb-4">{user?.name || "Quý Khách"}</h1>
+                  <p className="text-sm text-[#a68a61]">
+                    Bạn có <span className="text-[#f2e8d5] font-semibold">{upcomingReservations.length} lượt đặt bàn sắp tới</span>
+                  </p>
+                  <div className="flex gap-4 mt-6">
+                    <button onClick={() => setActiveNav('booking')}
+                      className="bg-gradient-to-r from-[#c9a447] to-[#b8953c] text-[#070503] font-bold text-xs uppercase tracking-widest px-6 py-3 rounded hover:scale-105 transition-transform flex items-center gap-2">
+                      <Calendar size={14}/> ĐẶT BÀN MỚI
+                    </button>
+                    <button onClick={() => setActiveNav('history')}
+                      className="border border-[#c9a447]/30 text-[#c9a447] font-bold text-xs uppercase tracking-widest px-6 py-3 rounded hover:bg-[#c9a447]/10 transition-colors">
+                      XEM LỊCH SỬ
                     </button>
                   </div>
                 </div>
               </div>
 
-              {/* Hành trình trải nghiệm */}
-              <div className="glass-panel-luxury p-6 rounded-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-6 opacity-20 pointer-events-none transform -scale-x-100">
-                  <span className="text-4xl font-serif text-[#c9a447]">🌸</span>
-                </div>
-                <div className="absolute bottom-0 left-0 p-4 opacity-20 pointer-events-none">
-                  <span className="text-4xl font-serif text-[#c9a447]">🌸</span>
-                </div>
-
-                <h3 className="section-title mb-8 flex items-center gap-2 text-sm justify-center"><Sparkles size={16}/> HÀNH TRÌNH TRẢI NGHIỆM</h3>
-                
-                <div className="flex items-center justify-between relative px-8 pb-4">
-                  {/* Connecting Line */}
-                  <div className="absolute top-[18px] left-[60px] right-[60px] h-[2px] bg-[#c9a447]/20 z-0"></div>
+              {/* Upcoming Booking Card */}
+              {upcomingReservations.length > 0 && (
+                <div className="glass-panel-luxury p-6 rounded-2xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-6 opacity-20 pointer-events-none">
+                    <span className="text-6xl font-serif text-[#c9a447]">🌸</span>
+                  </div>
+                  <h3 className="section-title mb-5 flex items-center gap-2 text-sm"><Calendar size={16}/> ĐẶT BÀN SẮP TỚI</h3>
                   
-                  {/* Progress Line */}
-                  <div className="absolute top-[18px] left-[60px] right-[60px] h-[2px] bg-[#c9a447] z-0" style={{width: '100%'}}></div>
-
-                  {/* Steps */}
-                  {MOCK_JOURNEY.map((s, i) => (
-                    <div key={i} className="relative z-10 flex flex-col items-center gap-3">
-                       <div className={`w-9 h-9 rounded-full flex items-center justify-center 
-                          ${s.completed ? 'bg-[#c9a447] text-[#070503] shadow-[0_0_20px_rgba(201,164,71,0.5)]' : 'bg-[#15110d] border-2 border-[#c9a447]/30 text-[#8c7355]'}`}>
-                         <CheckCircle2 size={20} />
-                       </div>
-                       <div className="text-center">
-                         <div className={`text-xs font-semibold ${s.completed ? 'text-[#f2e8d5]' : 'text-[#8c7355]'}`}>{s.step}</div>
-                         <div className="text-[11px] text-[#7a6040] mt-1">{s.date}</div>
-                       </div>
+                  <div className="flex flex-col md:flex-row gap-6">
+                    <div className="relative w-full md:w-[280px] h-[180px] rounded-xl overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.8)] border border-[#c9a447]/20 shrink-0">
+                      <img src={spaceGallery} className="w-full h-full object-cover" alt="Room" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
                     </div>
-                  ))}
+
+                    <div className="flex-1 flex flex-col">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <h4 className="font-serif text-xl text-[#f2e8d5] mb-1">
+                            {upcomingReservations[0].table?.tableNumber
+                              ? `Bàn ${upcomingReservations[0].table.tableNumber}`
+                              : 'Bàn chờ xếp'
+                            }
+                          </h4>
+                        </div>
+                        <span className={`text-[9px] font-bold tracking-wider uppercase px-3 py-1.5 rounded-full border ${STATUS_CONFIG[upcomingReservations[0].status]?.cls}`}>
+                          {STATUS_CONFIG[upcomingReservations[0].status]?.label}
+                        </span>
+                      </div>
+
+                      <div className="space-y-2 flex-1">
+                        <div className="flex items-center gap-3 text-sm">
+                          <Calendar size={15} className="text-[#c9a447]"/>
+                          <span className="text-[#a68a61]">{new Date(upcomingReservations[0].reservationDate).toLocaleDateString('vi-VN')}</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm">
+                          <Clock size={15} className="text-[#c9a447]"/>
+                          <span className="text-[#a68a61]">{upcomingReservations[0].reservationTime}</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm">
+                          <User size={15} className="text-[#c9a447]"/>
+                          <span className="text-[#a68a61]">{upcomingReservations[0].numberOfGuests} khách</span>
+                        </div>
+                      </div>
+
+                      <button onClick={() => setActiveNav('history')}
+                        className="mt-4 border border-[#c9a447]/40 text-[#c9a447] font-semibold text-xs uppercase tracking-widest px-6 py-3 rounded hover:bg-[#c9a447]/10 transition-colors w-max">
+                        XEM CHI TIẾT
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Gợi ý dành riêng */}
               <div className="glass-panel-luxury p-6 rounded-2xl relative">
-                <div className="absolute top-2 left-2 p-2 opacity-10 pointer-events-none">
-                  <span className="text-3xl font-serif text-[#c9a447]">🌸</span>
-                </div>
-                
                 <div className="flex justify-between items-center mb-6 relative z-10">
                   <h3 className="section-title flex items-center gap-2 text-sm"><Sparkles size={16}/> GỢI Ý DÀNH RIÊNG CHO BẠN</h3>
                   <button className="text-xs text-[#c9a447] hover:text-[#f2e8d5] flex items-center gap-1 transition-colors">Xem tất cả <ArrowRight size={12}/></button>
@@ -342,95 +320,242 @@ export default function CustomerPortal({ user, onLogout }) {
                   ))}
                 </div>
               </div>
-
             </div>
+          )}
 
-            {/* RIGHT COLUMN (4 cols) */}
-            <div className="col-span-12 xl:col-span-4 space-y-6">
-              
-              {/* Ưu đãi của bạn */}
-              <div className="glass-panel-luxury p-6 rounded-2xl relative">
-                <div className="absolute top-2 left-2 p-2 opacity-10 pointer-events-none">
-                  <span className="text-3xl font-serif text-[#c9a447]">🌸</span>
-                </div>
-                <div className="flex justify-between items-center mb-5 relative z-10">
-                  <h3 className="section-title flex items-center gap-2 text-sm"><Ticket size={16}/> ƯU ĐÃI CỦA BẠN</h3>
-                  <button className="text-[11px] text-[#c9a447] hover:text-[#f2e8d5] flex items-center gap-1 transition-colors">Xem tất cả <ArrowRight size={10}/></button>
-                </div>
-                
-                <div className="voucher-ticket p-6 flex items-center shadow-[0_10px_30px_rgba(201,164,71,0.15)] relative z-10">
-                  <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none transform -scale-x-100">
-                    <span className="text-6xl font-serif text-[#0e0a06]">🌸</span>
+          {/* ===== BOOKING FORM ===== */}
+          {activeNav === 'booking' && (
+            <div className="max-w-2xl mx-auto space-y-6">
+              <div>
+                <h1 className="font-serif text-3xl text-[#c9a447] glow-text mb-2">Đặt Bàn</h1>
+                <p className="text-sm text-[#a68a61]">Chúng tôi sẽ xác nhận lại qua điện thoại trong vòng 30 phút</p>
+              </div>
+
+              {bookingSuccess ? (
+                <div className="glass-panel-luxury p-8 rounded-2xl text-center space-y-4">
+                  <div className="w-16 h-16 rounded-full bg-green-500/20 border border-green-500/30 flex items-center justify-center mx-auto">
+                    <CheckCircle2 size={32} className="text-green-400" />
                   </div>
-                  
-                  <div className="flex-1 relative z-10">
-                    <div className="text-[10px] font-bold text-[#0e0a06] uppercase tracking-widest flex items-center gap-1.5 mb-3">
-                      <Star size={12} className="fill-[#0e0a06]"/> VIP GOLD VOUCHER
+                  <h2 className="font-serif text-2xl text-[#c9a447]">Đặt Bàn Thành Công!</h2>
+                  <div className="text-sm text-[#a68a61] space-y-1">
+                    <p><span className="text-[#f2e8d5]">{bookingSuccess.customerName}</span> · {bookingSuccess.numberOfGuests} khách</p>
+                    <p>{new Date(bookingSuccess.reservationDate).toLocaleDateString('vi-VN')} lúc <span className="text-[#f2e8d5]">{bookingSuccess.reservationTime}</span></p>
+                    {bookingSuccess.table && (
+                      <p>Bàn dự kiến: <span className="text-[#c9a447]">{bookingSuccess.table.tableNumber}</span></p>
+                    )}
+                    <p className="text-[#8c7355] text-xs mt-2">Nhân viên sẽ liên hệ xác nhận sớm nhất</p>
+                  </div>
+                  <div className="flex gap-3 justify-center pt-2">
+                    <button onClick={() => { setBookingSuccess(null); setActiveNav('history'); loadHistory(); }}
+                      className="border border-[#c9a447]/30 text-[#c9a447] text-xs px-5 py-2.5 rounded hover:bg-[#c9a447]/10 transition-colors">
+                      Xem lịch sử
+                    </button>
+                    <button onClick={() => setBookingSuccess(null)}
+                      className="bg-gradient-to-r from-[#c9a447] to-[#b8953c] text-[#070503] font-bold text-xs px-5 py-2.5 rounded">
+                      Đặt bàn khác
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <form onSubmit={handleBook} className="glass-panel-luxury p-8 rounded-2xl space-y-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="luxury-label">Họ và tên *</label>
+                      <input className="luxury-input" value={form.customerName}
+                        onChange={e => setForm(p => ({ ...p, customerName: e.target.value }))}
+                        placeholder="Nguyễn Văn A" required />
                     </div>
-                    <div className="text-4xl font-serif text-[#0e0a06] font-bold tracking-tight mb-2">GIẢM 15%</div>
-                    <div className="text-[11px] text-[#0e0a06]/80 font-semibold uppercase tracking-wider">Cho hóa đơn từ 2.000.000đ</div>
+                    <div>
+                      <label className="luxury-label">Số điện thoại *</label>
+                      <input className="luxury-input" value={form.phone}
+                        onChange={e => setForm(p => ({ ...p, phone: e.target.value }))}
+                        placeholder="0901 234 567" required />
+                    </div>
+                    <div>
+                      <label className="luxury-label">Ngày đặt *</label>
+                      <input type="date" className="luxury-input" value={form.reservationDate}
+                        min={today}
+                        onChange={e => setForm(p => ({ ...p, reservationDate: e.target.value }))}
+                        required />
+                    </div>
+                    <div>
+                      <label className="luxury-label">Giờ đến *</label>
+                      <select className="luxury-input luxury-select" value={form.reservationTime}
+                        onChange={e => setForm(p => ({ ...p, reservationTime: e.target.value }))}>
+                        {['11:00','11:30','12:00','12:30','13:00','17:00','17:30','18:00','18:30','19:00','19:30','20:00','20:30','21:00'].map(t => (
+                          <option key={t} value={t}>{t}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="luxury-label">Số khách *</label>
+                      <select className="luxury-input luxury-select" value={form.numberOfGuests}
+                        onChange={e => setForm(p => ({ ...p, numberOfGuests: e.target.value }))}>
+                        {['1','2','3','4','5','6','7','8','10','12'].map(n => (
+                          <option key={n} value={n}>{n} người</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                  
-                  <div className="voucher-divider mx-4 h-20 relative z-10"></div>
-                  
-                  <div className="flex flex-col justify-center text-right relative z-10 pl-2">
-                    <div className="text-[10px] text-[#0e0a06]/70 uppercase tracking-wider mb-1 font-semibold">Hạn sử dụng:</div>
-                    <div className="text-base font-bold text-[#0e0a06]">31/12/2026</div>
+                  <div>
+                    <label className="luxury-label">Ghi chú / Yêu cầu đặc biệt</label>
+                    <textarea className="luxury-input" rows={3} value={form.note}
+                      onChange={e => setForm(p => ({ ...p, note: e.target.value }))}
+                      placeholder="Dị ứng thực phẩm, tổ chức sinh nhật, ghế cao cho trẻ em..." />
                   </div>
+                  <button type="submit" disabled={bookingLoading}
+                    className="w-full bg-gradient-to-r from-[#c9a447] to-[#b8953c] text-[#070503] font-bold text-sm uppercase tracking-widest py-4 rounded hover:scale-[1.01] transition-transform flex items-center justify-center gap-2 disabled:opacity-60">
+                    {bookingLoading ? <><Loader2 size={16} className="animate-spin"/> Đang gửi...</> : <><Calendar size={16}/> Xác Nhận Đặt Bàn</>}
+                  </button>
+                </form>
+              )}
+
+              {/* Tips */}
+              <div className="glass-panel p-5 rounded-xl border border-[#c9a447]/10 space-y-3">
+                <h4 className="text-xs font-semibold text-[#c9a447] tracking-wider uppercase">Lưu ý khi đặt bàn</h4>
+                {[
+                  'Vui lòng đến đúng giờ hoặc thông báo nếu bị trễ',
+                  'Bàn sẽ được giữ trong vòng 15 phút',
+                  'Đặt bàn sẽ được xác nhận qua điện thoại',
+                  'Thực đơn đặc biệt cần đặt trước 24 giờ',
+                ].map((tip, i) => (
+                  <div key={i} className="flex items-start gap-2 text-xs text-[#8c7355]">
+                    <span className="text-[#c9a447] mt-0.5">✦</span>
+                    <span>{tip}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ===== HISTORY ===== */}
+          {activeNav === 'history' && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h1 className="font-serif text-3xl text-[#c9a447] glow-text mb-1">Lịch Sử Đặt Bàn</h1>
+                  <p className="text-sm text-[#a68a61]">Tất cả lịch sử đặt bàn của bạn</p>
                 </div>
+                <button onClick={loadHistory} className="flex items-center gap-1.5 text-[#8c7355] hover:text-[#c9a447] transition-colors text-xs">
+                  <RefreshCw size={12} /> Làm mới
+                </button>
               </div>
 
-              {/* Hạng thành viên */}
-              <div className="glass-panel-luxury p-6 rounded-2xl">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="section-title text-sm">HẠNG THÀNH VIÊN</h3>
-                  <div className="bg-[#c9a447]/10 text-[#c9a447] border border-[#c9a447]/30 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5">
-                    <Star size={10} className="fill-[#c9a447]"/> Gold Member
-                  </div>
+              {historyLoading ? (
+                <div className="flex justify-center py-16">
+                  <Loader2 size={24} className="text-[#c9a447] animate-spin" />
                 </div>
-
-                <p className="text-sm text-[#a68a61] mb-4">Bạn còn <span className="text-[#f2e8d5] font-semibold">350 điểm nữa để</span> lên hạng Platinum</p>
-                
-                <div className="relative h-2 bg-[#15110d] rounded-full overflow-hidden mb-3 border border-[#c9a447]/20">
-                  <div className="absolute top-0 left-0 h-full bg-gradient-to-r from-[#7a6040] to-[#c9a447] w-[85%] rounded-full shadow-[0_0_10px_rgba(201,164,71,0.5)]"></div>
-                </div>
-                
-                <div className="flex justify-between items-center text-xs text-[#8c7355]">
-                  <span>2.450 điểm</span>
-                  <span>2.800 điểm</span>
-                </div>
-              </div>
-
-              {/* AI Assistant Banner */}
-              <div className="glass-panel-luxury p-6 rounded-2xl relative overflow-hidden group cursor-pointer border-[#c9a447]/20">
-                {/* Background glow effects */}
-                <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-[#c9a447]/20 blur-[40px] rounded-full group-hover:bg-[#c9a447]/30 transition-colors"></div>
-                <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30"></div>
-                
-                <div className="relative z-10 flex flex-col items-start">
-                  <h3 className="section-title text-sm mb-3 flex items-center gap-2">AI DINING ASSISTANT</h3>
-                  <p className="text-sm text-[#a68a61] mb-6 pr-10">Để tôi gợi ý cho bạn trải nghiệm tuyệt vời nhất!</p>
-                  
-                  <button className="bg-gradient-to-r from-[#c9a447] to-[#b8953c] text-[#070503] font-bold text-xs uppercase tracking-widest px-6 py-3 rounded shadow-[0_5px_15px_rgba(201,164,71,0.3)] group-hover:scale-105 transition-transform">
-                    NHẬN GỢI Ý NGAY
+              ) : reservations.length === 0 ? (
+                <div className="glass-panel-luxury p-12 rounded-2xl text-center">
+                  <div className="text-4xl mb-4">📋</div>
+                  <p className="font-serif text-xl text-[#a68a61] mb-2">Chưa có đặt bàn nào</p>
+                  <p className="text-sm text-[#8c7355] mb-6">Hãy đặt bàn để trải nghiệm dịch vụ của Sakura</p>
+                  <button onClick={() => setActiveNav('booking')}
+                    className="bg-gradient-to-r from-[#c9a447] to-[#b8953c] text-[#070503] font-bold text-xs uppercase tracking-widest px-6 py-3 rounded">
+                    Đặt Bàn Ngay
                   </button>
                 </div>
-                
-                {/* Decorative icon bottom right */}
-                <div className="absolute bottom-4 right-4 opacity-80 group-hover:opacity-100 transition-opacity group-hover:scale-110 duration-500">
-                  <div className="w-16 h-16 rounded-full border-2 border-[#c9a447]/20 flex items-center justify-center relative">
-                    <div className="absolute inset-0 bg-[#c9a447] blur-[15px] opacity-20 rounded-full"></div>
-                    <span className="text-3xl text-[#c9a447]">🌸</span>
+              ) : (
+                <div className="space-y-4">
+                  {reservations.map(r => (
+                    <div key={r._id} className="glass-panel-luxury p-5 rounded-2xl border border-[#c9a447]/10 hover:border-[#c9a447]/20 transition-all">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex items-start gap-4">
+                          <div className="w-12 h-12 rounded-xl bg-[#c9a447]/10 border border-[#c9a447]/20 flex items-center justify-center shrink-0">
+                            <Calendar size={20} className="text-[#c9a447]" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-serif text-[#f2e8d5]">{r.customerName || user?.name}</span>
+                              <span className={`text-[9px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-full border ${STATUS_CONFIG[r.status]?.cls}`}>
+                                {STATUS_CONFIG[r.status]?.label}
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap gap-4 text-xs text-[#8c7355]">
+                              <span className="flex items-center gap-1.5">
+                                <Calendar size={11} className="text-[#c9a447]"/>
+                                {new Date(r.reservationDate).toLocaleDateString('vi-VN')}
+                              </span>
+                              <span className="flex items-center gap-1.5">
+                                <Clock size={11} className="text-[#c9a447]"/>
+                                {r.reservationTime}
+                              </span>
+                              <span className="flex items-center gap-1.5">
+                                <User size={11} className="text-[#c9a447]"/>
+                                {r.numberOfGuests} khách
+                              </span>
+                              {r.table && (
+                                <span className="flex items-center gap-1.5 text-[#c9a447]">
+                                  Bàn: {r.table.tableNumber}
+                                </span>
+                              )}
+                            </div>
+                            {r.note && (
+                              <p className="text-xs text-[#7a6040] mt-1.5 italic">"{r.note}"</p>
+                            )}
+                          </div>
+                        </div>
+
+                        {['pending', 'confirmed'].includes(r.status) && (
+                          <button
+                            onClick={() => handleCancel(r._id)}
+                            disabled={cancellingId === r._id}
+                            className="flex items-center gap-1.5 text-xs text-red-400 border border-red-400/20 px-3 py-2 rounded-lg hover:bg-red-400/10 transition-colors disabled:opacity-50 shrink-0">
+                            {cancellingId === r._id ? <Loader2 size={12} className="animate-spin"/> : <X size={12}/>}
+                            Hủy đặt bàn
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ===== PROFILE ===== */}
+          {activeNav === 'profile' && (
+            <div className="max-w-xl mx-auto space-y-6">
+              <div>
+                <h1 className="font-serif text-3xl text-[#c9a447] glow-text mb-2">Hồ Sơ Cá Nhân</h1>
+                <p className="text-sm text-[#a68a61]">Thông tin tài khoản của bạn</p>
+              </div>
+              
+              <div className="glass-panel-luxury p-8 rounded-2xl">
+                {/* Avatar */}
+                <div className="flex flex-col items-center mb-8">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#c9a447] to-[#8c7355] border-4 border-[#c9a447]/30 flex items-center justify-center text-[#070503] font-serif text-3xl shadow-[0_0_30px_rgba(201,164,71,0.3)] mb-3">
+                    {user?.name?.charAt(0) || 'K'}
                   </div>
+                  <h2 className="font-serif text-xl text-[#f2e8d5]">{user?.name}</h2>
+                  <span className="text-xs text-[#8c7355] mt-1 bg-[#c9a447]/10 border border-[#c9a447]/20 px-3 py-1 rounded-full">Thành viên Gold</span>
+                </div>
+
+                <div className="space-y-4">
+                  {[
+                    { label: 'Email', value: user?.email, icon: Mail },
+                    { label: 'Số điện thoại', value: user?.phone || 'Chưa cập nhật', icon: Phone },
+                    { label: 'Vai trò', value: 'Khách hàng', icon: User },
+                  ].map((field, i) => (
+                    <div key={i} className="flex items-center gap-4 py-3 border-b border-[#c9a447]/8">
+                      <div className="w-8 h-8 rounded-lg bg-[#c9a447]/10 flex items-center justify-center shrink-0">
+                        <field.icon size={14} className="text-[#c9a447]" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="text-[10px] text-[#7a6040] uppercase tracking-wider">{field.label}</div>
+                        <div className="text-sm text-[#f2e8d5] mt-0.5">{field.value}</div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-
             </div>
+          )}
 
-          </div>
         </div>
       </div>
-      
+      {/* Floating AI Assistant */}
+      <FloatingAIChat user={user} />
     </div>
   );
 }

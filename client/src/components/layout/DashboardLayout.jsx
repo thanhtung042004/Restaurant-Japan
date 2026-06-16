@@ -19,12 +19,12 @@ const NAV_MAP = {
     { icon: Activity, label: 'Nhật Ký', tab: 'logs' },
   ],
   manager: [
-    { icon: BarChart3, label: 'Tổng Quan', tab: 'analytics' },
-    { icon: Utensils, label: 'Thực Đơn', tab: 'menu' },
-    { icon: Table2, label: 'Bàn Ăn', tab: 'tables' },
-    { icon: FileText, label: 'Hóa Đơn', tab: 'invoices' },
-    { icon: CalendarDays, label: 'Đặt Bàn', tab: 'reservations' },
-    { icon: Users, label: 'Nhân Viên', tab: 'staff' },
+    { icon: LayoutDashboard, label: 'Tổng quan', tab: 'analytics' },
+    { icon: Utensils, label: 'Thực đơn', tab: 'menu' },
+    { icon: Table2, label: 'Bàn ăn', tab: 'tables' },
+    { icon: CalendarDays, label: 'Đặt bàn', tab: 'reservations' },
+    { icon: FileText, label: 'Hóa đơn', tab: 'invoices' },
+    { icon: Sparkles, label: 'Sakura AI', tab: 'ai' },
   ],
   waiter: [
     { icon: Table2, label: 'Sơ Đồ Bàn', tab: 'floor' },
@@ -47,7 +47,7 @@ const ROLE_BADGE_CLASS = {
 };
 
 /* ── Floating AI Chat Bubble ────────────────────────────── */
-function FloatingAIChat({ user }) {
+export function FloatingAIChat({ user }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
     { role: 'ai', text: `Xin chào ${user?.name?.split(' ').slice(-1)[0] || ''}! Tôi là Sakura AI. Tôi có thể giúp gợi ý món ăn, phân tích doanh thu hoặc tư vấn vận hành nhà hàng. Bạn cần hỗ trợ gì?` }
@@ -276,15 +276,24 @@ export default function DashboardLayout({ user, onLogout, children, activeTab, o
           <button
             key={tab}
             onClick={() => { onTabChange?.(tab); setMobileOpen(false); }}
-            className={`nav-item w-full ${collapsed ? 'justify-center p-2.5' : ''} ${activeTab === tab ? 'active' : ''}`}
+            className={`nav-item w-full ${collapsed ? 'justify-center p-2.5' : ''} ${activeTab === tab ? 'active border-l-2 border-gold bg-gold/10 text-gold' : 'text-cream hover:bg-gold/5'}`}
             title={collapsed ? label : undefined}
           >
-            <Icon size={collapsed ? 16 : 14} className="shrink-0" />
+            <Icon size={collapsed ? 16 : 14} className={`shrink-0 ${activeTab === tab ? 'text-gold' : 'text-muted'}`} />
             {!collapsed && <span className="truncate">{label}</span>}
             {!collapsed && activeTab === tab && <ChevronRight size={10} className="ml-auto text-gold" />}
           </button>
         ))}
       </nav>
+
+      {/* Decorative Fuji Mountain & Torii Gate */}
+      {!collapsed && user?.role === 'manager' && (
+        <div className="relative h-32 w-full shrink-0 overflow-hidden opacity-30 pointer-events-none mt-auto">
+          {/* Vẽ núi Phú Sĩ bằng CSS gradient / hình học đơn giản để giả lập hoặc dùng ảnh nếu có */}
+          <div className="absolute -bottom-4 -left-4 w-40 h-32 bg-gradient-to-tr from-gold/10 to-transparent clip-triangle"></div>
+          <div className="absolute bottom-2 left-6 text-gold/40 font-serif text-3xl font-light">⛩</div>
+        </div>
+      )}
 
       {/* Collapse toggle (expanded) & Logout */}
       <div className={`border-t border-gold/10 ${collapsed ? 'p-2 space-y-1' : 'p-3 space-y-2'}`}>
@@ -326,38 +335,36 @@ export default function DashboardLayout({ user, onLogout, children, activeTab, o
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Topbar */}
-        <header className="h-14 border-b border-gold/8 flex items-center justify-between px-4 md:px-6 bg-bg-2/80 backdrop-blur-sm shrink-0 sticky top-0 z-30">
+        <header className="h-16 border-b border-gold/5 flex items-center justify-between px-4 md:px-8 bg-bg/90 backdrop-blur-sm shrink-0 sticky top-0 z-30">
           <div className="flex items-center gap-3">
             {/* Mobile menu toggle */}
             <button onClick={() => setMobileOpen(o => !o)}
               className="lg:hidden text-muted hover:text-gold transition-colors p-1">
               <Menu size={18} />
             </button>
-
-            {/* Page title */}
-            <div className="hidden sm:flex flex-col">
-              <span className="font-serif text-sm text-gold tracking-widest uppercase">
-                Hệ Thống Sakura
-              </span>
-              <span className="text-[9px] text-muted tracking-wider">
-                {time.toLocaleDateString('vi-VN', { weekday: 'long', day: 'numeric', month: 'long' })}
-              </span>
-            </div>
           </div>
 
-          <div className="flex items-center gap-2 md:gap-3">
-            {/* Search */}
-            <div className="relative hidden md:block">
-              <Search size={12} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
-              <input className="topbar-search pl-8" placeholder="Tìm kiếm..." />
+          <div className="flex items-center gap-6">
+            {/* Search (Removed based on mockup, but keeping it small if needed, mockup doesn't have it on topbar) */}
+
+            {/* Date & Time */}
+            <div className="hidden sm:flex flex-col items-end">
+              <span className="text-xs text-muted">
+                {time.toLocaleDateString('vi-VN', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' })}
+              </span>
+              <span className="text-sm font-semibold text-cream">
+                {time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}
+              </span>
             </div>
 
             {/* Notification bell */}
-            <div className="relative">
+            <div className="relative flex items-center justify-center">
               <button onClick={() => setNotifOpen(o => !o)}
-                className="relative w-8 h-8 rounded-lg border border-gold/10 bg-bg/50 flex items-center justify-center text-muted hover:text-gold hover:border-gold/25 transition-all">
-                <Bell size={14} />
-                <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-gold animate-pulse" />
+                className="relative text-gold hover:text-gold-light transition-all flex items-center justify-center">
+                <Bell size={20} />
+                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-500 border border-bg text-[8px] font-bold flex items-center justify-center text-white">
+                  3
+                </span>
               </button>
               {notifOpen && (
                 <div className="absolute right-0 top-10 w-72 glass-panel-luxury p-0 overflow-hidden z-50 shadow-luxury-lg">
@@ -390,13 +397,19 @@ export default function DashboardLayout({ user, onLogout, children, activeTab, o
             </div>
 
             {/* User avatar + role */}
-            <div className="flex items-center gap-2 pl-2 border-l border-gold/10">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-wood to-bg-3 border border-gold/25 flex items-center justify-center font-serif text-gold text-sm select-none">
-                {user?.name?.charAt(0) || 'U'}
+            <div className="flex items-center gap-3 cursor-pointer group">
+              <div className="w-10 h-10 rounded-full overflow-hidden border border-gold/30">
+                {/* Fallback to initials if no image, but mockup has an image. Let's use a placeholder image or gradient */}
+                <div className="w-full h-full bg-gradient-to-br from-wood to-bg-3 flex items-center justify-center font-serif text-gold text-lg select-none">
+                  {user?.name?.charAt(0) || 'U'}
+                </div>
               </div>
               <div className="hidden sm:flex flex-col">
-                <span className="text-[11px] font-semibold text-cream leading-none">{user?.name?.split(' ').slice(-1)[0]}</span>
-                <span className={`text-[9px] tracking-wider uppercase font-medium ${ROLE_BADGE_CLASS[user?.role] || 'text-muted'}`}>
+                <div className="flex items-center gap-1">
+                  <span className="text-sm font-semibold text-cream leading-none group-hover:text-gold transition-colors">{user?.name?.split(' ').slice(-1)[0] || 'Manager'}</span>
+                  <ChevronDown size={14} className="text-muted" />
+                </div>
+                <span className="text-[10px] text-muted mt-1">
                   {ROLE_LABELS[user?.role]}
                 </span>
               </div>

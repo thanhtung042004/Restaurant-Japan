@@ -1,127 +1,169 @@
-import React, { useState } from 'react';
-import { Send, Sparkles, TrendingUp, Users } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Send, Sparkles, TrendingUp, Users, Bot, RefreshCw, Coffee, Utensils, BarChart3, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { aiAPI } from '../../../api';
 
-export default function AIAssistantDashboard() {
-  const [aiChat, setAiChat] = useState([
-    { role: 'ai', text: 'Xin chao! Toi la tro ly tu van Sakura AI. Toi co the giup gi cho ban hom nay?' }
+const QUICK_PROMPTS = [
+  { icon: TrendingUp, label: 'Phân tích doanh thu', q: 'Hãy phân tích doanh thu và xu hướng hiện tại của nhà hàng.' },
+  { icon: Utensils, label: 'Món bán chạy', q: 'Món ăn nào đang bán chạy nhất? Hãy đưa ra gợi ý để tối ưu thực đơn.' },
+  { icon: Users, label: 'Dự đoán khách', q: 'Dự đoán lượng khách hôm nay dựa trên xu hướng và đưa ra lời khuyên nhân sự.' },
+  { icon: Clock, label: 'Giờ cao điểm', q: 'Phân tích giờ cao điểm và gợi ý cách chuẩn bị tốt nhất.' },
+  { icon: Coffee, label: 'Tối ưu vận hành', q: 'Đề xuất cách tối ưu hóa quy trình vận hành nhà hàng để giảm chi phí và tăng hiệu quả.' },
+  { icon: BarChart3, label: 'Báo cáo tháng', q: 'Đánh giá hiệu suất kinh doanh tháng này và đề xuất chiến lược cho tháng tới.' },
+];
+
+export default function AIAssistantDashboard({ user }) {
+  const [messages, setMessages] = useState([
+    { role: 'ai', text: `Xin chào! Tôi là **Sakura AI** — trợ lý thông minh của nhà hàng.\n\nTôi có thể giúp bạn:\n• Phân tích doanh thu & xu hướng\n• Gợi ý tối ưu thực đơn\n• Dự đoán lượng khách & nhân sự\n• Tư vấn vận hành nhà hàng\n\nHãy đặt câu hỏi hoặc chọn gợi ý bên dưới! 🌸` }
   ]);
-  const [aiInput, setAiInput] = useState('');
-  const [aiLoading, setAiLoading] = useState(false);
+  const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(false);
+  const chatEndRef = useRef(null);
 
-  const handleSend = async () => {
-    const questionText = aiInput.trim();
-    if (!questionText) return;
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
-    setAiChat(prev => [...prev, { role: 'user', text: questionText }]);
-    setAiInput('');
-    setAiLoading(true);
+  const handleSend = async (question) => {
+    const q = (question || input).trim();
+    if (!q || loading) return;
+    
+    setMessages(prev => [...prev, { role: 'user', text: q }]);
+    setInput('');
+    setLoading(true);
 
     try {
-      const res = await aiAPI.getBusinessAnalysis(questionText);
+      // Determine if it's a food/menu question or business analysis
+      const isFoodQ = /món|ăn|sushi|ramen|sashimi|saba|thực đơn|nguyên liệu|recipe|food/i.test(q);
+      const res = isFoodQ
+        ? await aiAPI.getFoodSuggestion(q)
+        : await aiAPI.getBusinessAnalysis(q);
+      
       if (res.success) {
-        setAiChat(prev => [...prev, { role: 'ai', text: res.data.answer }]);
+        setMessages(prev => [...prev, { role: 'ai', text: res.data.answer }]);
       }
     } catch (err) {
-      toast.error('Loi ket noi den Sakura AI.');
-      setAiChat(prev => [...prev, { role: 'ai', text: 'Khong the thuc hien phan tich do loi he thong.' }]);
+      setMessages(prev => [...prev, { role: 'ai', text: 'Xin lỗi, không thể kết nối với Sakura AI lúc này. Vui lòng thử lại sau.' }]);
     } finally {
-      setAiLoading(false);
+      setLoading(false);
     }
   };
 
+  const clearChat = () => {
+    setMessages([{ role: 'ai', text: 'Cuộc trò chuyện đã được làm mới. Tôi có thể giúp gì cho bạn? 🌸' }]);
+  };
+
   return (
-    <div className="h-[calc(100vh-8rem)] flex flex-col lg:flex-row gap-6 animate-fade-up">
-      {/* Sidebar Insights */}
-      <div className="w-full lg:w-1/3 space-y-6 flex flex-col">
-        <div className="glass-panel-luxury p-6 flex flex-col gap-4">
+    <div className="h-[calc(100vh-8rem)] flex flex-col lg:flex-row gap-5 animate-fade-up">
+      
+      {/* ── Left: Quick Actions Panel ── */}
+      <div className="w-full lg:w-72 shrink-0 flex flex-col gap-4">
+        {/* AI Card */}
+        <div className="glass-panel-luxury p-5 flex flex-col gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full border border-gold/40 flex items-center justify-center bg-gold/10">
-              <Sparkles size={18} className="text-gold" />
+            <div className="relative">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-gold to-wood flex items-center justify-center">
+                <Bot size={18} className="text-bg" />
+              </div>
+              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-500 border-2 border-bg-2" />
             </div>
             <div>
-              <h2 className="font-serif text-lg text-gold tracking-widest uppercase">Sakura AI</h2>
-              <p className="text-[10px] text-cream-dim tracking-wider uppercase">He thong phan tich thong minh</p>
+              <h2 className="font-serif text-base text-gold tracking-wider">Sakura AI</h2>
+              <p className="text-[9px] text-green-400 tracking-widest uppercase">Đang hoạt động</p>
             </div>
           </div>
           <p className="text-xs text-muted leading-relaxed">
-            AI Assistant giup ban phan tich doanh thu, goi y mon an, du doan luong khach va toi uu hoa nhan su trong ca truc.
+            Trợ lý AI thông minh hỗ trợ phân tích kinh doanh, tư vấn vận hành và dự báo xu hướng nhà hàng.
           </p>
+          <div className="flex items-center gap-2 text-[10px] text-muted">
+            <span className="w-1.5 h-1.5 rounded-full bg-gold"></span>
+            Gemini AI · Phân tích thực tế
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 flex-1">
-          <div className="glass-panel p-4 flex flex-col justify-center items-center gap-2 text-center hover:border-gold/40 transition-colors cursor-pointer" onClick={() => setAiInput('Hay phan tich doanh thu hom nay')}>
-            <TrendingUp size={20} className="text-gold mb-1" />
-            <span className="text-[10px] uppercase text-cream tracking-wider">Doanh thu nay</span>
-          </div>
-          <div className="glass-panel p-4 flex flex-col justify-center items-center gap-2 text-center hover:border-gold/40 transition-colors cursor-pointer" onClick={() => setAiInput('Mon an nao ban chay nhat?')}>
-            <div className="w-5 h-5 rounded-full border border-gold/40 flex items-center justify-center text-[10px] text-gold">M</div>
-            <span className="text-[10px] uppercase text-cream tracking-wider">Mon ban chay</span>
-          </div>
-          <div className="glass-panel p-4 flex flex-col justify-center items-center gap-2 text-center hover:border-gold/40 transition-colors cursor-pointer" onClick={() => setAiInput('Du doan khach toi nay')}>
-            <Users size={20} className="text-gold mb-1" />
-            <span className="text-[10px] uppercase text-cream tracking-wider">Du doan khach</span>
-          </div>
-          <div className="glass-panel p-4 flex flex-col justify-center items-center gap-2 text-center hover:border-gold/40 transition-colors cursor-pointer" onClick={() => setAiInput('Goi y nhan su ca toi')}>
-            <Sparkles size={20} className="text-gold mb-1" />
-            <span className="text-[10px] uppercase text-cream tracking-wider">Toi uu nhan su</span>
+        {/* Quick Actions */}
+        <div className="glass-panel-luxury p-4 flex-1">
+          <div className="text-[9px] text-muted uppercase tracking-widest mb-3">Gợi ý nhanh</div>
+          <div className="space-y-1.5">
+            {QUICK_PROMPTS.map((p, i) => (
+              <button key={i} onClick={() => handleSend(p.q)} disabled={loading}
+                className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg border border-gold/10 text-left hover:border-gold/30 hover:bg-gold/5 transition-all group disabled:opacity-50">
+                <p.icon size={12} className="text-gold shrink-0 group-hover:scale-110 transition-transform" />
+                <span className="text-xs text-cream-dim group-hover:text-cream">{p.label}</span>
+              </button>
+            ))}
           </div>
         </div>
+
+        {/* Clear chat */}
+        <button onClick={clearChat} className="btn-ghost flex items-center justify-center gap-1.5 text-[11px]">
+          <RefreshCw size={11} /> Làm mới chat
+        </button>
       </div>
 
-      {/* Chat Area */}
-      <div className="w-full lg:w-2/3 glass-panel-luxury p-0 flex flex-col overflow-hidden relative">
-        <div className="absolute inset-0 particles-bg opacity-30 pointer-events-none" />
-        
+      {/* ── Right: Chat Area ── */}
+      <div className="flex-1 glass-panel-luxury flex flex-col overflow-hidden min-h-0">
         {/* Chat Header */}
-        <div className="px-6 py-4 border-b border-gold/10 bg-bg-2/50 backdrop-blur-sm z-10">
-          <h3 className="font-serif text-sm text-gold uppercase tracking-wider flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" /> Truc tuyen
-          </h3>
+        <div className="px-5 py-3.5 border-b border-gold/10 bg-gradient-to-r from-bg-2 to-wood/10 shrink-0 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles size={14} className="text-gold" />
+            <span className="font-serif text-sm text-gold tracking-wider">Hỏi Đáp Thông Minh</span>
+          </div>
+          <span className="text-[9px] text-muted">{messages.length - 1} tin nhắn</span>
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 z-10 no-scrollbar">
-          {aiChat.map((msg, idx) => (
-            <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[80%] p-4 rounded-2xl text-xs leading-relaxed whitespace-pre-line ${
-                msg.role === 'user' 
-                  ? 'bg-gold/10 border border-gold/30 text-cream rounded-tr-none shadow-[0_0_15px_rgba(201,164,71,0.1)]' 
-                  : 'bg-glass/10 border border-gold/10 text-cream-dim rounded-tl-none shadow-lg'
+        <div className="flex-1 overflow-y-auto p-5 space-y-4 no-scrollbar min-h-0">
+          {messages.map((msg, idx) => (
+            <div key={idx} className={`flex gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              {msg.role === 'ai' && (
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gold/30 to-wood/60 flex items-center justify-center shrink-0 mt-0.5">
+                  <Bot size={13} className="text-gold" />
+                </div>
+              )}
+              <div className={`max-w-[78%] px-4 py-3 text-xs leading-relaxed rounded-2xl whitespace-pre-line ${
+                msg.role === 'user'
+                  ? 'bg-gold/12 border border-gold/25 text-cream rounded-tr-sm'
+                  : 'bg-wood/25 border border-gold/10 text-cream-dim rounded-tl-sm'
               }`}>
-                {msg.text}
+                {msg.text.replace(/\*\*(.*?)\*\*/g, '$1')}
               </div>
+              {msg.role === 'user' && (
+                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-wood to-bg-3 border border-gold/20 flex items-center justify-center shrink-0 mt-0.5 font-serif text-gold text-sm">
+                  {user?.name?.charAt(0) || 'M'}
+                </div>
+              )}
             </div>
           ))}
-          {aiLoading && (
-            <div className="flex justify-start">
-              <div className="max-w-[80%] p-4 rounded-2xl rounded-tl-none bg-glass/10 border border-gold/10 flex gap-2 items-center">
-                <div className="w-1.5 h-1.5 rounded-full bg-gold animate-bounce [animation-delay:-0.3s]" />
-                <div className="w-1.5 h-1.5 rounded-full bg-gold animate-bounce [animation-delay:-0.15s]" />
-                <div className="w-1.5 h-1.5 rounded-full bg-gold animate-bounce" />
+          {loading && (
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gold/30 to-wood/60 flex items-center justify-center shrink-0">
+                <Bot size={13} className="text-gold" />
+              </div>
+              <div className="px-4 py-3 rounded-2xl rounded-tl-sm bg-wood/25 border border-gold/10 flex gap-1.5 items-center">
+                <span className="loading-dot"></span>
+                <span className="loading-dot"></span>
+                <span className="loading-dot"></span>
               </div>
             </div>
           )}
+          <div ref={chatEndRef} />
         </div>
 
         {/* Input */}
-        <div className="p-4 border-t border-gold/10 bg-bg-2/50 backdrop-blur-sm z-10">
-          <div className="relative flex items-center">
-            <input 
-              type="text"
-              value={aiInput}
-              onChange={(e) => setAiInput(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Nhap cau hoi cua ban..."
-              className="w-full bg-bg/80 border border-gold/20 rounded-full px-6 py-3.5 text-xs text-cream outline-none focus:border-gold/60 focus:shadow-[0_0_10px_rgba(201,164,71,0.2)] transition-all"
+        <div className="p-4 border-t border-gold/10 bg-bg-2/50 shrink-0">
+          <div className="flex items-center gap-2 bg-bg/60 border border-gold/15 rounded-full px-4 py-2 focus-within:border-gold/40 transition-all">
+            <input
+              className="flex-1 bg-transparent outline-none text-xs text-cream placeholder-muted"
+              placeholder="Đặt câu hỏi về kinh doanh, thực đơn, vận hành..."
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSend()}
+              disabled={loading}
             />
-            <button 
-              onClick={handleSend}
-              disabled={aiLoading}
-              className="absolute right-2 w-10 h-10 rounded-full bg-gold hover:bg-gold-light text-bg flex items-center justify-center transition-all disabled:opacity-50"
-            >
-              <Send size={14} />
+            <button onClick={() => handleSend()} disabled={loading || !input.trim()}
+              className="w-7 h-7 rounded-full bg-gold hover:bg-gold-light text-bg flex items-center justify-center transition-all disabled:opacity-40 shrink-0">
+              <Send size={12} />
             </button>
           </div>
         </div>

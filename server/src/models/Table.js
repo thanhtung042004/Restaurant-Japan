@@ -15,7 +15,7 @@ const tableSchema = new mongoose.Schema(
     },
     area: {
       type: String,
-      enum: ['Tang 1', 'Tang 2', 'Phong VIP'],
+      enum: ['Tang 1', 'Tang 2', 'Phong VIP', 'Tầng 1', 'Tầng 2', 'Phòng VIP', 'Sân Vườn'],
       default: 'Tang 1',
     },
     status: {

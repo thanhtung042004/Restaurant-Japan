@@ -21,8 +21,20 @@ const SYSTEM_LOGS = [
   { time: '12:30', icon: '📦', msg: 'Cập nhật hệ thống v2.4.1', type: 'info' },
 ];
 
-export default function AdminDashboard() {
-  const [subTab, setSubTab] = useState('users');
+export default function AdminDashboard({ activeTab: propTab, onTabChange: propOnTabChange }) {
+  const [subTab, setSubTab] = useState(propTab || 'users');
+
+  // Keep local tab in sync with sidebar navigation
+  React.useEffect(() => {
+    if (propTab && ['users', 'logs', 'config', 'security'].includes(propTab)) {
+      setSubTab(propTab);
+    }
+  }, [propTab]);
+
+  const setTabWrapper = (tab) => {
+    setSubTab(tab);
+    propOnTabChange?.(tab);
+  };
   const [users, setUsers] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -113,7 +125,7 @@ export default function AdminDashboard() {
       {/* Tabs */}
       <div className="flex border-b border-gold/10 gap-0.5 overflow-x-auto no-scrollbar">
         {TAB_ITEMS.map(({ id, icon: Icon, label }) => (
-          <button key={id} onClick={() => setSubTab(id)} className={`luxury-tab ${subTab === id ? 'active' : ''}`}>
+          <button key={id} onClick={() => setTabWrapper(id)} className={`luxury-tab ${subTab === id ? 'active' : ''}`}>
             <Icon size={12} /> {label}
           </button>
         ))}

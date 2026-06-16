@@ -1,20 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import {
-  Users, RefreshCw, Plus, Play, Check,
-  ChevronRight, LayoutGrid, ListOrdered, Utensils,
-  CreditCard, Percent, Receipt, AlertCircle
+  Users, RefreshCw, Plus, Play,
+  LayoutGrid, ListOrdered, Utensils,
+  CreditCard, Percent, Receipt, ClipboardCheck
 } from 'lucide-react';
 import { tableAPI, menuAPI, orderAPI, invoiceAPI, categoryAPI } from '../../../api';
 
+// Backend statuses: available, reserved, serving, cleaning
 const TABLE_STATUS_CONFIG = {
-  available: { label: 'Trống', cssClass: 'table-status-empty', badge: 'status-available', dot: 'bg-green-400' },
-  reserved:  { label: 'Đã đặt', cssClass: 'table-status-booked', badge: 'status-reserved', dot: 'bg-gold' },
-  occupied:  { label: 'Đang phục vụ', cssClass: 'table-status-serving', badge: 'status-occupied', dot: 'bg-red-400' },
-  clearing:  { label: 'Cần dọn', cssClass: 'table-status-clearing', badge: 'status-clearing', dot: 'bg-cream-dim' },
+  available: { label: 'Trống',         cssClass: 'table-status-empty',    badge: 'status-available', dot: 'bg-green-400' },
+  reserved:  { label: 'Đã đặt',        cssClass: 'table-status-booked',   badge: 'status-reserved',  dot: 'bg-gold' },
+  serving:   { label: 'Đang phục vụ',  cssClass: 'table-status-serving',  badge: 'status-occupied',  dot: 'bg-red-400' },
+  cleaning:  { label: 'Cần dọn',       cssClass: 'table-status-clearing', badge: 'status-clearing',  dot: 'bg-cream-dim' },
 };
 
-export default function WaiterDashboard() {
+export default function WaiterDashboard({ socket }) {
   const [tables, setTables] = useState([]);
   const [categories, setCategories] = useState([]);
   const [menuItems, setMenuItems] = useState([]);
@@ -29,6 +30,7 @@ export default function WaiterDashboard() {
   const [catFilter, setCatFilter] = useState('all');
   const [paymentMethod, setPaymentMethod] = useState('cash');
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
 
   const loadData = async () => {
     try {
@@ -36,7 +38,7 @@ export default function WaiterDashboard() {
       const [tableRes, catRes, menuRes] = await Promise.all([
         tableAPI.getTables(),
         categoryAPI.getCategories(),
-        menuAPI.getItems({ limit: 100 })
+        menuAPI.getItems({ limit: 200 })
       ]);
       if (tableRes.success) setTables(tableRes.data);
       if (catRes.success) setCategories(catRes.data);
@@ -48,30 +50,99 @@ export default function WaiterDashboard() {
     }
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadData();
+
+    if (socket) {
+      socket.on('table:statusUpdated', ({ tableId, status }) => {
+        setTables(prev => prev.map(t => t._id === tableId ? { ...t, status } : t));
+        setSelectedTable(prev => {
+          if (prev && prev._id === tableId) {
+            return { ...prev, status };
+          }
+          return prev;
+        });
+      });
+
+      socket.on('order:itemStatusUpdated', ({ orderId, itemId, status }) => {
+        setActiveOrder(prev => {
+          if (prev && prev._id === orderId) {
+            const updatedItems = prev.items.map(item =>
+              item._id === itemId ? { ...item, status } : item
+            );
+            return { ...prev, items: updatedItems };
+          }
+          return prev;
+        });
+      });
+
+      const handleOrderUpdate = (updatedOrder) => {
+        setSelectedTable(currentTable => {
+          if (currentTable && updatedOrder.table === currentTable._id) {
+            setActiveOrder(updatedOrder);
+          }
+          return currentTable;
+        });
+        loadData();
+      };
+
+      socket.on('order:new', handleOrderUpdate);
+      socket.on('order:itemsAdded', handleOrderUpdate);
+    }
+
+    return () => {
+      if (socket) {
+        socket.off('table:statusUpdated');
+        socket.off('order:itemStatusUpdated');
+        socket.off('order:new');
+        socket.off('order:itemsAdded');
+      }
+    };
+  }, [socket]);
 
   const handleTableClick = async (table) => {
     setSelectedTable(table);
     setCart([]);
     setActiveOrder(null);
     setCheckoutInvoice(null);
-    if (table.status === 'occupied') {
+    setConfirmClose(false);
+
+    if (table.status === 'serving' || table.status === 'cleaning') {
       try {
-        const res = await orderAPI.getOrders({ table: table._id, status: 'pending,cooking,ready' });
-        if (res.success && res.data.length > 0) setActiveOrder(res.data[0]);
-        else toast.error('Không tìm thấy đơn hàng đang hoạt động');
-      } catch (err) { toast.error('Không thể tải đơn hàng: ' + err.message); }
+        const res = await orderAPI.getOrders({ table: table._id, status: 'open,serving' });
+        if (res.success && res.data.length > 0) {
+          setActiveOrder(res.data[0]);
+        }
+      } catch (err) {
+        toast.error('Không thể tải đơn hàng: ' + err.message);
+      }
     }
   };
 
+  // Open table: set table status to serving
   const handleOpenTable = async () => {
     try {
-      const res = await tableAPI.updateStatus(selectedTable._id, 'occupied');
+      const res = await tableAPI.updateStatus(selectedTable._id, 'serving');
       if (res.success) {
         toast.success(`✅ Mở bàn ${selectedTable.tableNumber}`);
-        const orderRes = await orderAPI.create({ tableId: selectedTable._id, items: [] });
-        if (orderRes.success) setActiveOrder(orderRes.data);
+        const updated = { ...selectedTable, status: 'serving' };
+        setSelectedTable(updated);
+        setTables(prev => prev.map(t => t._id === updated._id ? updated : t));
+      }
+    } catch (err) { toast.error(err.message); }
+  };
+
+  // Mark table as cleaning after done serving
+  const handleMarkClearing = async () => {
+    try {
+      const res = await tableAPI.updateStatus(selectedTable._id, 'cleaning');
+      if (res.success) {
+        toast.success(`🧹 Bàn ${selectedTable.tableNumber} chờ dọn dẹp`);
         loadData();
+        setSelectedTable(null);
+        setActiveOrder(null);
+        setCart([]);
+        setConfirmClose(false);
       }
     } catch (err) { toast.error(err.message); }
   };
@@ -90,38 +161,59 @@ export default function WaiterDashboard() {
     setCart(prev => prev.map(i => i.item._id === itemId ? { ...i, quantity: qty } : i));
   };
 
+  // Submit cart items
   const handleSubmitOrderItems = async () => {
     if (cart.length === 0) return;
     try {
-      const res = await orderAPI.addItems(activeOrder._id, cart.map(i => ({
-        menuItem: i.item._id, quantity: i.quantity, notes: ''
-      })));
-      if (res.success) {
-        toast.success('🍽️ Gửi món xuống bếp thành công!');
-        setActiveOrder(res.data);
-        setCart([]);
-        loadData();
+      let res;
+      if (!activeOrder) {
+        // Create new order — backend: { tableId, items: [{ menuItemId, quantity, note }] }
+        res = await orderAPI.create({
+          tableId: selectedTable._id,
+          items: cart.map(i => ({ menuItemId: i.item._id, quantity: i.quantity, note: '' }))
+        });
+        if (res.success) {
+          toast.success('🍽️ Gửi món xuống bếp thành công!');
+          setActiveOrder(res.data);
+          setCart([]);
+          loadData();
+        }
+      } else {
+        // Add items to existing order — backend: { items: [{ menuItemId, quantity, note }] }
+        res = await orderAPI.addItems(activeOrder._id, cart.map(i => ({
+          menuItemId: i.item._id, quantity: i.quantity, note: ''
+        })));
+        if (res.success) {
+          toast.success('🍽️ Gửi thêm món xuống bếp!');
+          setActiveOrder(res.data);
+          setCart([]);
+          loadData();
+        }
       }
     } catch (err) { toast.error(err.message); }
   };
 
-  const getSubtotal = () => activeOrder?.items.reduce((s, i) => s + i.priceAtOrder * i.quantity, 0) || 0;
+  const getSubtotal = () => activeOrder?.items
+    .filter(i => i.status !== 'cancelled')
+    .reduce((s, i) => s + (i.price || 0) * i.quantity, 0) || 0;
 
   const calcBill = () => {
     const sub = getSubtotal();
     const disc = Math.round(sub * (Number(discountPercent) / 100));
-    const vat = Math.round((sub - disc) * 0.1);
-    return { sub, disc, vat, total: sub - disc + vat };
+    const afterDisc = sub - disc;
+    const vat = Math.round(afterDisc * 0.08);
+    return { sub, disc, vat, total: afterDisc + vat };
   };
 
   const handleCheckout = async () => {
-    const { disc, vat } = calcBill();
+    if (!activeOrder) return;
     setCheckoutLoading(true);
     try {
+      // Backend: { orderId, discountPercent, vatPercent, paymentMethod }
       const res = await invoiceAPI.create({
         orderId: activeOrder._id,
-        discount: disc,
-        vat,
+        discountPercent: Number(discountPercent),
+        vatPercent: 8,
         paymentMethod
       });
       if (res.success) {
@@ -129,6 +221,7 @@ export default function WaiterDashboard() {
         setCheckoutInvoice(res.data);
         setActiveOrder(null);
         setSelectedTable(null);
+        setCart([]);
         loadData();
       }
     } catch (err) { toast.error(err.message); }
@@ -145,8 +238,11 @@ export default function WaiterDashboard() {
   const statusCounts = {
     available: tables.filter(t => t.status === 'available').length,
     reserved: tables.filter(t => t.status === 'reserved').length,
-    occupied: tables.filter(t => t.status === 'occupied').length,
+    serving: tables.filter(t => t.status === 'serving').length,
+    cleaning: tables.filter(t => t.status === 'cleaning').length,
   };
+
+  const canOrder = selectedTable && (selectedTable.status === 'serving' || selectedTable.status === 'reserved');
 
   return (
     <div className="space-y-5">
@@ -154,7 +250,7 @@ export default function WaiterDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="section-title flex items-center gap-2">
-            <LayoutGrid size={16} className="text-gold" /> Sơ Đồ Nhà Hàng & Gọi Món
+            <LayoutGrid size={16} className="text-gold" /> Sơ Đồ Nhà Hàng &amp; Gọi Món
           </h1>
           <p className="section-subtitle mt-1">Quản lý bàn · Nhận order · Thanh toán</p>
         </div>
@@ -164,11 +260,12 @@ export default function WaiterDashboard() {
       </div>
 
       {/* Quick stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-4 gap-3">
         {[
           { label: 'Trống', count: statusCounts.available, color: 'text-green-400', bg: 'bg-green-400/8', border: 'border-green-400/15' },
           { label: 'Đã đặt', count: statusCounts.reserved, color: 'text-gold', bg: 'bg-gold/8', border: 'border-gold/15' },
-          { label: 'Đang phục vụ', count: statusCounts.occupied, color: 'text-red-400', bg: 'bg-red-400/8', border: 'border-red-400/15' },
+          { label: 'Đang phục vụ', count: statusCounts.serving, color: 'text-red-400', bg: 'bg-red-400/8', border: 'border-red-400/15' },
+          { label: 'Cần dọn', count: statusCounts.cleaning, color: 'text-cream-dim', bg: 'bg-cream-dim/8', border: 'border-cream-dim/15' },
         ].map((s, i) => (
           <div key={i} className={`rounded-xl border ${s.bg} ${s.border} p-3 text-center`}>
             <div className={`text-xl font-serif tabular-nums ${s.color}`}>{s.count}</div>
@@ -186,8 +283,9 @@ export default function WaiterDashboard() {
             {[
               { value: 'all', label: 'Tất cả' },
               { value: 'available', label: 'Trống' },
-              { value: 'occupied', label: 'Có khách' },
+              { value: 'serving', label: 'Có khách' },
               { value: 'reserved', label: 'Đã đặt' },
+              { value: 'cleaning', label: 'Cần dọn' },
             ].map(f => (
               <button key={f.value} onClick={() => setStatusFilter(f.value)}
                 className={`luxury-tab ${statusFilter === f.value ? 'active' : ''}`}>
@@ -213,11 +311,9 @@ export default function WaiterDashboard() {
                       isSelected ? 'ring-2 ring-gold ring-offset-1 ring-offset-bg scale-[1.02]' : ''
                     }`}
                   >
-                    {/* Status light */}
                     <div className={`absolute top-3 right-3 w-2 h-2 rounded-full ${cfg.dot} ${
-                      t.status === 'occupied' ? 'animate-pulse' : ''
+                      t.status === 'serving' ? 'animate-pulse' : ''
                     }`} />
-
                     <div className="font-serif text-lg text-gold leading-none">{t.tableNumber}</div>
                     <div className="flex items-center gap-1 text-[10px] text-muted">
                       <Users size={9} /> {t.capacity} người
@@ -227,6 +323,9 @@ export default function WaiterDashboard() {
                   </button>
                 );
               })}
+              {filteredTables.length === 0 && (
+                <div className="col-span-4 py-12 text-center text-muted text-xs">Không có bàn nào</div>
+              )}
             </div>
           )}
         </div>
@@ -242,11 +341,20 @@ export default function WaiterDashboard() {
                     <h3 className="font-serif text-base text-gold">Bàn {selectedTable.tableNumber}</h3>
                     <p className="text-[10px] text-muted uppercase tracking-wider">{selectedTable.area} · {selectedTable.capacity} người</p>
                   </div>
-                  {selectedTable.status === 'available' && (
-                    <button onClick={handleOpenTable} className="btn-gold text-[10px]">
-                      ✓ Mở bàn
-                    </button>
-                  )}
+                  <div className="flex gap-2">
+                    {(selectedTable.status === 'available') && (
+                      <button onClick={handleOpenTable} className="btn-gold text-[10px]">✓ Mở bàn</button>
+                    )}
+                    {(selectedTable.status === 'reserved') && (
+                      <button onClick={handleOpenTable} className="btn-gold text-[10px]">✓ Nhận bàn</button>
+                    )}
+                    {(selectedTable.status === 'serving' || selectedTable.status === 'cleaning') && (
+                      <button onClick={() => setConfirmClose(true)}
+                        className="btn-ghost text-[10px] flex items-center gap-1 text-cream-dim border-cream-dim/20">
+                        <ClipboardCheck size={11}/> Dọn bàn
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -255,24 +363,30 @@ export default function WaiterDashboard() {
                 {activeOrder && (
                   <div>
                     <div className="section-subtitle mb-2 flex items-center gap-1.5">
-                      <ListOrdered size={11} /> Đơn hàng #{activeOrder._id.substring(18)}
+                      <ListOrdered size={11} /> Đơn #{activeOrder._id.substring(18)}
                     </div>
-                    <div className="space-y-1.5 max-h-40 overflow-y-auto no-scrollbar">
-                      {activeOrder.items.length === 0 ? (
+                    <div className="space-y-1.5 max-h-52 overflow-y-auto no-scrollbar">
+                      {activeOrder.items.filter(i => i.status !== 'cancelled').length === 0 ? (
                         <p className="text-[11px] text-muted italic text-center py-3">Chưa có món nào</p>
-                      ) : activeOrder.items.map((i, idx) => (
+                      ) : activeOrder.items
+                          .filter(i => i.status !== 'cancelled')
+                          .map((i, idx) => (
                         <div key={idx} className="flex items-center justify-between py-2 border-b border-gold/6 text-xs">
                           <div>
-                            <span className="text-cream font-medium">{i.menuItem?.name}</span>
+                            <span className="text-cream font-medium">{i.menuItem?.name || i.name}</span>
                             <span className="text-muted ml-2">×{i.quantity}</span>
                           </div>
-                          <span className={`status-badge ${
-                            i.status === 'pending' ? 'status-pending' :
-                            i.status === 'cooking' ? 'status-cooking' : 'status-ready'
-                          }`}>
-                            {i.status === 'pending' ? '⏳' : i.status === 'cooking' ? '🔥' : '✅'}
-                            {i.status === 'pending' ? 'Chờ' : i.status === 'cooking' ? 'Đang làm' : 'Xong'}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-gold text-[10px]">
+                              {((i.price || 0) * i.quantity).toLocaleString('vi-VN')} ₫
+                            </span>
+                            <span className={`status-badge ${
+                              i.status === 'pending' ? 'status-pending' :
+                              i.status === 'cooking' ? 'status-cooking' : 'status-ready'
+                            }`}>
+                              {i.status === 'pending' ? '⏳ Chờ' : i.status === 'cooking' ? '🔥 Đang làm' : '✅ Xong'}
+                            </span>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -280,13 +394,13 @@ export default function WaiterDashboard() {
                 )}
 
                 {/* Cart */}
-                {activeOrder && (
+                {canOrder && (
                   <div>
                     <div className="section-subtitle mb-2 flex items-center gap-1.5">
-                      <Plus size={11} /> Gọi thêm
+                      <Plus size={11} /> {activeOrder ? 'Gọi thêm' : 'Gọi món mới'}
                     </div>
                     {cart.length === 0 ? (
-                      <p className="text-[11px] text-muted italic">Chọn món từ danh mục bên dưới</p>
+                      <p className="text-[11px] text-muted italic">Chọn món từ thực đơn bên dưới</p>
                     ) : (
                       <div className="space-y-1.5">
                         {cart.map(ci => (
@@ -309,16 +423,30 @@ export default function WaiterDashboard() {
                     )}
                   </div>
                 )}
+
+                {/* Empty state */}
+                {!activeOrder && selectedTable.status === 'available' && (
+                  <div className="text-center py-8 text-muted text-xs">
+                    <div className="text-3xl mb-3">🪑</div>
+                    <p>Bàn đang trống</p>
+                    <p className="text-muted/60 mt-1">Nhấn "Mở bàn" để bắt đầu phục vụ</p>
+                  </div>
+                )}
+
+                {!activeOrder && selectedTable.status === 'cleaning' && (
+                  <div className="text-center py-8 text-muted text-xs">
+                    <div className="text-3xl mb-3">🧹</div>
+                    <p>Bàn đang chờ dọn dẹp</p>
+                  </div>
+                )}
               </div>
 
               {/* Checkout panel */}
-              {activeOrder && (
+              {activeOrder && getSubtotal() > 0 && (
                 <div className="p-4 border-t border-gold/10 bg-bg-2/60 shrink-0 space-y-3">
                   <div className="section-subtitle flex items-center gap-1.5">
                     <Receipt size={11} /> Thanh toán
                   </div>
-
-                  {/* Discount */}
                   <div className="flex items-center gap-2 text-xs">
                     <Percent size={11} className="text-muted" />
                     <span className="text-muted">Giảm giá:</span>
@@ -326,38 +454,31 @@ export default function WaiterDashboard() {
                       className="luxury-input luxury-select flex-1 py-1.5 text-xs h-7">
                       {['0','5','10','15','20'].map(v => <option key={v} value={v}>{v}%</option>)}
                     </select>
-
-                    <span className="text-muted ml-1">Thanh toán:</span>
+                    <span className="text-muted ml-1">TT:</span>
                     <select value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}
                       className="luxury-input luxury-select flex-1 py-1.5 text-xs h-7">
                       <option value="cash">Tiền mặt</option>
-                      <option value="transfer">Chuyển khoản</option>
+                      <option value="transfer">CK</option>
                       <option value="card">Thẻ</option>
                     </select>
                   </div>
-
                   <div className="space-y-1 text-xs">
                     <div className="flex justify-between text-muted">
-                      <span>Tạm tính:</span>
-                      <span>{bill.sub.toLocaleString('vi-VN')} ₫</span>
+                      <span>Tạm tính:</span><span>{bill.sub.toLocaleString('vi-VN')} ₫</span>
                     </div>
                     {bill.disc > 0 && (
                       <div className="flex justify-between text-wine-light">
-                        <span>Giảm giá:</span>
-                        <span>−{bill.disc.toLocaleString('vi-VN')} ₫</span>
+                        <span>Giảm ({discountPercent}%):</span><span>−{bill.disc.toLocaleString('vi-VN')} ₫</span>
                       </div>
                     )}
                     <div className="flex justify-between text-muted">
-                      <span>VAT (10%):</span>
-                      <span>+{bill.vat.toLocaleString('vi-VN')} ₫</span>
+                      <span>VAT (8%):</span><span>+{bill.vat.toLocaleString('vi-VN')} ₫</span>
                     </div>
                     <div className="flex justify-between text-gold font-serif font-semibold text-sm border-t border-gold/10 pt-1.5 mt-1.5">
-                      <span>Tổng:</span>
-                      <span>{bill.total.toLocaleString('vi-VN')} ₫</span>
+                      <span>Tổng:</span><span>{bill.total.toLocaleString('vi-VN')} ₫</span>
                     </div>
                   </div>
-
-                  <button onClick={handleCheckout} disabled={checkoutLoading || getSubtotal() === 0}
+                  <button onClick={handleCheckout} disabled={checkoutLoading}
                     className="w-full btn-gold flex items-center justify-center gap-2 disabled:opacity-50">
                     <CreditCard size={13} />
                     {checkoutLoading ? 'Đang xử lý...' : 'Xác nhận thanh toán'}
@@ -374,14 +495,13 @@ export default function WaiterDashboard() {
           )}
         </div>
 
-        {/* Menu Catalog — shows when table occupied */}
-        {selectedTable && selectedTable.status === 'occupied' && (
+        {/* Menu Catalog */}
+        {canOrder && (
           <div className="lg:col-span-3 glass-panel-luxury p-4 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="section-title flex items-center gap-2">
                 <Utensils size={14} /> Thực Đơn Gọi Món
               </h3>
-              {/* Category filter */}
               <div className="flex gap-1.5 flex-wrap">
                 <button onClick={() => setCatFilter('all')}
                   className={`text-[10px] px-2.5 py-1 rounded-full border transition-all ${catFilter === 'all' ? 'border-gold/35 text-gold bg-gold/8' : 'border-gold/10 text-muted'}`}>
@@ -396,26 +516,48 @@ export default function WaiterDashboard() {
               </div>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
-              {filteredMenu.map(item => (
-                <button
-                  key={item._id}
-                  onClick={() => addToCart(item)}
-                  className={`glass-card p-3 text-left transition-all ${
-                    !item.isAvailable ? 'opacity-40 cursor-not-allowed' : 'hover:border-gold/30'
-                  }`}
-                  disabled={!item.isAvailable}
-                >
-                  <div className="font-serif text-xs text-cream truncate">{item.name}</div>
-                  <div className="text-[10px] text-gold mt-1">{item.price.toLocaleString('vi-VN')} ₫</div>
-                  {!item.isAvailable && (
-                    <span className="text-[9px] text-red-400 uppercase tracking-wider">Hết món</span>
-                  )}
-                </button>
-              ))}
+              {filteredMenu.map(item => {
+                const inCart = cart.find(c => c.item._id === item._id);
+                return (
+                  <button
+                    key={item._id}
+                    onClick={() => addToCart(item)}
+                    className={`glass-card p-3 text-left transition-all relative ${
+                      !item.isAvailable ? 'opacity-40 cursor-not-allowed' : 'hover:border-gold/30'
+                    }`}
+                    disabled={!item.isAvailable}
+                  >
+                    {inCart && (
+                      <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-gold flex items-center justify-center text-[9px] text-bg font-bold">
+                        {inCart.quantity}
+                      </div>
+                    )}
+                    <div className="font-serif text-xs text-cream truncate pr-6">{item.name}</div>
+                    <div className="text-[10px] text-gold mt-1">{item.price.toLocaleString('vi-VN')} ₫</div>
+                    {!item.isAvailable && (
+                      <span className="text-[9px] text-red-400 uppercase tracking-wider">Hết món</span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
       </div>
+
+      {/* Confirm dọn bàn modal */}
+      {confirmClose && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm z-50">
+          <div className="glass-panel-luxury p-6 max-w-sm w-full animate-scale-in">
+            <h3 className="font-serif text-lg text-gold mb-2">Dọn bàn {selectedTable?.tableNumber}?</h3>
+            <p className="text-xs text-muted mb-5">Đảm bảo đã thanh toán trước khi dọn bàn. Bàn sẽ chuyển sang trạng thái "Cần dọn".</p>
+            <div className="flex gap-3">
+              <button onClick={() => setConfirmClose(false)} className="btn-ghost flex-1">Huỷ</button>
+              <button onClick={handleMarkClearing} className="btn-gold flex-1">Xác nhận dọn bàn</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Checkout success */}
       {checkoutInvoice && (
@@ -423,7 +565,10 @@ export default function WaiterDashboard() {
           <div className="glass-panel-luxury p-8 max-w-sm w-full text-center animate-scale-in">
             <div className="text-5xl mb-4">✅</div>
             <h3 className="font-serif text-xl text-gold tracking-wider mb-2">Thanh Toán Thành Công</h3>
-            <p className="text-xs text-muted mb-4">Cảm ơn quý khách đã sử dụng dịch vụ của Sakura!</p>
+            <div className="text-lg font-serif text-cream mb-1">
+              {checkoutInvoice.total?.toLocaleString('vi-VN')} ₫
+            </div>
+            <p className="text-xs text-muted mb-6">Cảm ơn quý khách đã sử dụng dịch vụ của Sakura!</p>
             <button onClick={() => setCheckoutInvoice(null)} className="btn-ghost text-[11px]">Đóng</button>
           </div>
         </div>

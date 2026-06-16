@@ -4,9 +4,13 @@ const MenuItem = require('../models/MenuItem');
 
 const getOrders = async (req, res) => {
   try {
-    const { status, tableId, page = 1, limit = 20 } = req.query;
+    const { status, table: tableId, page = 1, limit = 20 } = req.query;
     const filter = {};
-    if (status) filter.status = status;
+    // Support comma-separated status values e.g. 'open,serving'
+    if (status) {
+      const statuses = status.split(',').map(s => s.trim()).filter(Boolean);
+      filter.status = statuses.length === 1 ? statuses[0] : { $in: statuses };
+    }
     if (tableId) filter.table = tableId;
 
     const total = await Order.countDocuments(filter);
