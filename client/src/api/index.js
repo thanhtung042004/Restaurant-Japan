@@ -38,6 +38,9 @@ export const authAPI = {
   register: (data) => API.post('/auth/register', data),
   getMe: () => API.get('/auth/profile'),
   updateProfile: (data) => API.put('/auth/updatedetails', data),
+  uploadAvatar: (formData) => API.put('/auth/updatedetails', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
 };
 
 // USER ENDPOINTS

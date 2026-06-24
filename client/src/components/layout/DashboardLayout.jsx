@@ -14,9 +14,9 @@ import { aiAPI } from '../../api';
 const NAV_MAP = {
   admin: [
     { icon: Users, label: 'Tài Khoản', tab: 'users' },
-    { icon: FileText, label: 'Hóa Đơn', tab: 'invoices' },
-    { icon: Settings, label: 'Cấu Hình', tab: 'config' },
     { icon: Activity, label: 'Nhật Ký', tab: 'logs' },
+    { icon: Settings, label: 'Cấu Hình', tab: 'config' },
+    { icon: BookOpen, label: 'Bảo Mật', tab: 'security' },
   ],
   manager: [
     { icon: LayoutDashboard, label: 'Tổng quan', tab: 'analytics' },
@@ -27,6 +27,7 @@ const NAV_MAP = {
     { icon: Sparkles, label: 'Sakura AI', tab: 'ai' },
   ],
   waiter: [
+    { icon: LayoutDashboard, label: 'Trang Chủ', tab: 'home' },
     { icon: Table2, label: 'Sơ Đồ Bàn', tab: 'floor' },
     { icon: ClipboardList, label: 'Gọi Món', tab: 'order' },
   ],
@@ -191,7 +192,7 @@ export function FloatingAIChat({ user }) {
 }
 
 /* ── Main DashboardLayout ───────────────────────────────── */
-export default function DashboardLayout({ user, onLogout, children, activeTab, onTabChange }) {
+export default function DashboardLayout({ user, onLogout, children, activeTab, onTabChange, notifications = [], onClearNotifications }) {
   const navigate = useNavigate();
   const location = useLocation();
   const [collapsed, setCollapsed] = useState(false);
@@ -254,7 +255,8 @@ export default function DashboardLayout({ user, onLogout, children, activeTab, o
 
       {/* Navigation */}
       <nav className={`flex-1 overflow-y-auto no-scrollbar ${collapsed ? 'p-2 space-y-1' : 'p-3 space-y-0.5'} transition-all`}>
-        {!collapsed && (
+        {/* ponytail: waiter home is a tab; other roles get a landing page link */}
+        {user?.role !== 'waiter' && !collapsed && (
           <Link to="/"
             onClick={() => setMobileOpen(false)}
             className="nav-item mb-2">
@@ -262,7 +264,7 @@ export default function DashboardLayout({ user, onLogout, children, activeTab, o
             <span>Trang Chủ</span>
           </Link>
         )}
-        {collapsed && (
+        {user?.role !== 'waiter' && collapsed && (
           <Link to="/" className="nav-item justify-center p-2.5" title="Trang Chủ">
             <Home size={16} />
           </Link>
@@ -357,40 +359,48 @@ export default function DashboardLayout({ user, onLogout, children, activeTab, o
               </span>
             </div>
 
-            {/* Notification bell */}
+            {/* Notification bell — realtime socket-driven */}
             <div className="relative flex items-center justify-center">
               <button onClick={() => setNotifOpen(o => !o)}
                 className="relative text-gold hover:text-gold-light transition-all flex items-center justify-center">
                 <Bell size={20} />
-                <span className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-red-500 border border-bg text-[8px] font-bold flex items-center justify-center text-white">
-                  3
-                </span>
+                {notifications.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-500 border border-bg text-[8px] font-bold flex items-center justify-center text-white animate-pulse">
+                    {notifications.length > 9 ? '9+' : notifications.length}
+                  </span>
+                )}
               </button>
               {notifOpen && (
-                <div className="absolute right-0 top-10 w-72 glass-panel-luxury p-0 overflow-hidden z-50 shadow-luxury-lg">
+                <div className="absolute right-0 top-10 w-80 glass-panel-luxury p-0 overflow-hidden z-50 shadow-luxury-lg">
                   <div className="px-4 py-3 border-b border-gold/10 flex justify-between items-center">
                     <span className="text-xs font-semibold text-gold tracking-wider uppercase">Thông Báo</span>
-                    <button onClick={() => setNotifOpen(false)} className="text-muted hover:text-cream"><X size={12} /></button>
+                    <div className="flex items-center gap-2">
+                      {notifications.length > 0 && (
+                        <button onClick={() => { onClearNotifications?.(); setNotifOpen(false); }}
+                          className="text-[10px] text-muted hover:text-cream transition-colors">Xoá tất cả</button>
+                      )}
+                      <button onClick={() => setNotifOpen(false)} className="text-muted hover:text-cream"><X size={12} /></button>
+                    </div>
                   </div>
-                  <div className="divide-y divide-gold/5">
-                    {[
-                      { icon: '🍜', msg: 'Bàn T12 vừa gọi thêm món', time: '2 phút trước', color: 'text-gold' },
-                      { icon: '🔔', msg: 'Đặt bàn mới từ Nguyễn Văn An', time: '8 phút trước', color: 'text-cream' },
-                      { icon: '⚠️', msg: 'Sashimi cá hồi sắp hết nguyên liệu', time: '15 phút trước', color: 'text-yellow-500' },
-                    ].map((n, i) => (
-                      <div key={i} className="px-4 py-3 hover:bg-gold/5 transition-colors cursor-pointer">
+                  <div className="divide-y divide-gold/5 max-h-80 overflow-y-auto no-scrollbar">
+                    {notifications.length === 0 ? (
+                      <div className="px-4 py-8 text-center">
+                        <Bell size={24} className="text-muted/30 mx-auto mb-2" />
+                        <p className="text-xs text-muted">Chưa có thông báo mới</p>
+                      </div>
+                    ) : notifications.map((n, i) => (
+                      <div key={i} className="px-4 py-3 hover:bg-gold/5 transition-colors">
                         <div className="flex items-start gap-3">
-                          <span className="text-base">{n.icon}</span>
+                          <span className="text-base shrink-0">{n.icon}</span>
                           <div>
-                            <p className={`text-xs ${n.color}`}>{n.msg}</p>
-                            <p className="text-[10px] text-muted mt-0.5">{n.time}</p>
+                            <p className="text-xs text-cream">{n.message}</p>
+                            <p className="text-[10px] text-muted mt-0.5">
+                              {Math.floor((Date.now() - new Date(n.time)) / 60000)} phút trước
+                            </p>
                           </div>
                         </div>
                       </div>
                     ))}
-                  </div>
-                  <div className="px-4 py-2 border-t border-gold/10 text-center">
-                    <button className="text-[10px] text-gold hover:text-gold-light tracking-wider uppercase">Xem tất cả</button>
                   </div>
                 </div>
               )}

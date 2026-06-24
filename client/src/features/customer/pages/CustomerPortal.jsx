@@ -1,23 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Home, Calendar, Clock, Ticket, Star, User, Settings, LogOut,
+  Home, Calendar, Clock, User, Settings, LogOut,
   Phone, Mail, MapPin, Instagram, Facebook, Heart,
-  ChevronRight, ArrowRight, Sparkles, CheckCircle2, ChevronDown, Bot,
-  X, AlertCircle, RefreshCw, Loader2
+  ArrowRight, Sparkles, CheckCircle2, ChevronDown, Camera,
+  X, RefreshCw, Loader2, Edit2, Save, ChevronLeft, ChevronRight,
+  UtensilsCrossed, FileText, Search,
 } from 'lucide-react';
 
 import spaceGallery from '../../../assets/space_gallery.png';
 import sushiDish from '../../../assets/sushi_dish.png';
 import wagyuDish from '../../../assets/wagyu.png';
-import { reservationAPI } from '../../../api';
+import { reservationAPI, menuAPI, categoryAPI, authAPI } from '../../../api';
 import toast from 'react-hot-toast';
 import { FloatingAIChat } from '../../../components/layout/DashboardLayout';
 
 const MOCK_SUGGESTIONS = [
-  { id: 1, name: "Sushi Omakase", image: sushiDish },
-  { id: 2, name: "Wagyu A5", image: wagyuDish },
-  { id: 3, name: "Sashimi Deluxe", image: sushiDish },
+  { id: 1, name: 'Sushi Omakase', image: sushiDish },
+  { id: 2, name: 'Wagyu A5', image: wagyuDish },
+  { id: 3, name: 'Sashimi Deluxe', image: sushiDish },
 ];
 
 const SIDEBAR_NAV = [
@@ -36,14 +37,142 @@ const STATUS_CONFIG = {
 
 const today = new Date().toISOString().split('T')[0];
 
-export default function CustomerPortal({ user, onLogout }) {
+// ── Menu Modal ──────────────────────────────────────────────────────────────
+function MenuModal({ onClose }) {
+  const [items, setItems] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [menuRes, catRes] = await Promise.all([
+          menuAPI.getItems({ limit: 200 }),
+          categoryAPI.getCategories(),
+        ]);
+        if (menuRes.success) setItems(menuRes.data);
+        if (catRes.success) setCategories(catRes.data);
+      } catch (e) {
+        toast.error('Không thể tải menu');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const filtered = items.filter(item => {
+    const matchCat = activeCategory === 'all' || item.category?._id === activeCategory || item.category === activeCategory;
+    const matchSearch = item.name.toLowerCase().includes(search.toLowerCase());
+    return matchCat && matchSearch && item.isAvailable;
+  });
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="bg-[#0e0a06] border border-[#c9a447]/20 rounded-2xl w-full max-w-4xl max-h-[90vh] flex flex-col shadow-[0_0_60px_rgba(201,164,71,0.12)] overflow-hidden"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-[#c9a447]/10">
+          <div>
+            <h2 className="font-serif text-2xl text-[#c9a447]">Thực Đơn Sakura</h2>
+            <p className="text-xs text-[#8c7355] mt-0.5">Khám phá các món ăn Nhật Bản đặc sắc</p>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full border border-[#c9a447]/20 flex items-center justify-center text-[#8c7355] hover:text-[#c9a447] hover:border-[#c9a447]/50 transition-colors">
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Search + Category tabs */}
+        <div className="p-4 border-b border-[#c9a447]/10 space-y-3">
+          <div className="relative">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8c7355]" />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Tìm món ăn..."
+              className="w-full bg-[#15110d] border border-[#c9a447]/15 rounded-lg pl-9 pr-4 py-2.5 text-sm text-[#f2e8d5] placeholder-[#5a4a35] focus:outline-none focus:border-[#c9a447]/40"
+            />
+          </div>
+          <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+            <button
+              onClick={() => setActiveCategory('all')}
+              className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${activeCategory === 'all' ? 'bg-[#c9a447] text-[#070503]' : 'border border-[#c9a447]/20 text-[#8c7355] hover:text-[#c9a447]'}`}
+            >
+              Tất cả
+            </button>
+            {categories.map(c => (
+              <button
+                key={c._id}
+                onClick={() => setActiveCategory(c._id)}
+                className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-medium transition-colors ${activeCategory === c._id ? 'bg-[#c9a447] text-[#070503]' : 'border border-[#c9a447]/20 text-[#8c7355] hover:text-[#c9a447]'}`}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Items grid */}
+        <div className="flex-1 overflow-y-auto p-4 no-scrollbar">
+          {loading ? (
+            <div className="flex justify-center py-16"><Loader2 size={28} className="text-[#c9a447] animate-spin" /></div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-16 text-[#8c7355]">
+              <UtensilsCrossed size={40} className="mx-auto mb-3 opacity-30" />
+              <p>Không tìm thấy món nào</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {filtered.map(item => (
+                <div key={item._id} className="bg-[#15110d] border border-[#c9a447]/10 rounded-xl overflow-hidden hover:border-[#c9a447]/30 transition-all group">
+                  <div className="relative h-32 overflow-hidden">
+                    {item.image ? (
+                      <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    ) : (
+                      <div className="w-full h-full bg-[#1a1208] flex items-center justify-center">
+                        <UtensilsCrossed size={28} className="text-[#c9a447]/20" />
+                      </div>
+                    )}
+                    {item.isBestSeller && (
+                      <span className="absolute top-2 left-2 text-[9px] font-bold bg-[#c9a447] text-[#070503] px-2 py-0.5 rounded-full uppercase tracking-wider">Best Seller</span>
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <p className="font-serif text-[#f2e8d5] text-sm leading-tight mb-1">{item.name}</p>
+                    {item.description && <p className="text-[10px] text-[#7a6040] leading-relaxed line-clamp-2 mb-2">{item.description}</p>}
+                    <div className="flex items-center justify-between">
+                      <span className="text-[#c9a447] font-semibold text-sm">{item.price?.toLocaleString('vi-VN')}₫</span>
+                      <div className="flex gap-1">
+                        {item.isVegetarian && <span className="text-[9px] bg-green-500/15 text-green-400 border border-green-500/20 px-1.5 py-0.5 rounded">Chay</span>}
+                        {item.containsSeafood && <span className="text-[9px] bg-blue-500/15 text-blue-400 border border-blue-500/20 px-1.5 py-0.5 rounded">Hải sản</span>}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main Portal ──────────────────────────────────────────────────────────────
+export default function CustomerPortal({ user: initialUser, onLogout, onUserUpdate }) {
   const navigate = useNavigate();
   const [activeNav, setActiveNav] = useState('home');
+  const [user, setUser] = useState(initialUser);
+  const [showMenuModal, setShowMenuModal] = useState(false);
 
   // Booking form state
   const [form, setForm] = useState({
-    customerName: user?.name || '',
-    phone: user?.phone || '',
+    customerName: initialUser?.name || '',
+    phone: initialUser?.phone || '',
     numberOfGuests: '2',
     reservationDate: today,
     reservationTime: '18:00',
@@ -56,6 +185,14 @@ export default function CustomerPortal({ user, onLogout }) {
   const [reservations, setReservations] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [cancellingId, setCancellingId] = useState(null);
+
+  // Profile edit state
+  const [editPhone, setEditPhone] = useState(false);
+  const [phoneVal, setPhoneVal] = useState(initialUser?.phone || '');
+  const [editBio, setEditBio] = useState(false);
+  const [bioVal, setBioVal] = useState(initialUser?.bio || '');
+  const [profileSaving, setProfileSaving] = useState(false);
+  const avatarInputRef = useRef();
 
   const loadHistory = async () => {
     setHistoryLoading(true);
@@ -110,15 +247,71 @@ export default function CustomerPortal({ user, onLogout }) {
     }
   };
 
-  // Upcoming reservations for home page
+  // Avatar upload
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('avatar', file);
+    try {
+      const res = await authAPI.uploadAvatar(formData);
+      if (res.success) {
+        setUser(res.data);
+        onUserUpdate?.(res.data);
+        toast.success('Đã cập nhật ảnh đại diện');
+      }
+    } catch (err) {
+      toast.error('Không thể cập nhật ảnh: ' + err.message);
+    }
+  };
+
+  // Save phone
+  const savePhone = async () => {
+    setProfileSaving(true);
+    try {
+      const res = await authAPI.updateProfile({ phone: phoneVal });
+      if (res.success) {
+        setUser(res.data);
+        onUserUpdate?.(res.data);
+        setEditPhone(false);
+        toast.success('Đã cập nhật số điện thoại');
+      }
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
+  // Save bio
+  const saveBio = async () => {
+    setProfileSaving(true);
+    try {
+      const res = await authAPI.updateProfile({ bio: bioVal });
+      if (res.success) {
+        setUser(res.data);
+        onUserUpdate?.(res.data);
+        setEditBio(false);
+        toast.success('Đã cập nhật mô tả');
+      }
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setProfileSaving(false);
+    }
+  };
+
   const upcomingReservations = reservations.filter(r =>
     ['pending', 'confirmed'].includes(r.status) &&
     new Date(r.reservationDate) >= new Date()
   );
 
+  const avatarUrl = user?.avatar || null;
+
   return (
     <div className="flex h-screen w-full bg-[#070503] text-[#f2e8d5] overflow-hidden font-sans">
-      
+      {showMenuModal && <MenuModal onClose={() => setShowMenuModal(false)} />}
+
       {/* ================= SIDEBAR ================= */}
       <div className="w-[260px] h-full border-r border-[#c9a447]/10 flex flex-col bg-[#0b0805] relative z-20 shrink-0">
         
@@ -211,11 +404,14 @@ export default function CustomerPortal({ user, onLogout }) {
           <div className="absolute right-10 flex items-center gap-3 glass-panel px-4 py-2 rounded-full cursor-pointer hover:bg-[#c9a447]/10 transition-colors">
             <div className="text-right">
               <div className="text-[10px] text-[#8c7355] mb-0.5">Xin chào,</div>
-              <div className="text-xs font-semibold text-[#f2e8d5]">{user?.name || "Khách"}</div>
+              <div className="text-xs font-semibold text-[#f2e8d5]">{user?.name || 'Khách'}</div>
             </div>
             <ChevronDown size={14} className="text-[#8c7355] ml-1" />
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#c9a447] to-[#8c7355] border-2 border-[#c9a447]/30 flex items-center justify-center font-serif text-[#070503] text-sm overflow-hidden ml-2">
-               <img src={`https://ui-avatars.com/api/?name=${user?.name || 'Sakura'}&background=c9a447&color=070503&bold=true`} alt="avatar" />
+              {avatarUrl
+                ? <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+                : <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user?.name || 'Sakura')}&background=c9a447&color=070503&bold=true`} alt="avatar" />
+              }
             </div>
           </div>
         </div>
@@ -230,7 +426,7 @@ export default function CustomerPortal({ user, onLogout }) {
               <div className="flex justify-between items-end gap-6 mb-8">
                 <div className="flex-1">
                   <p className="text-[#8c7355] text-lg font-serif mb-1">Chào mừng trở lại</p>
-                  <h1 className="font-serif text-4xl text-[#c9a447] glow-text tracking-wide mb-4">{user?.name || "Quý Khách"}</h1>
+                  <h1 className="font-serif text-4xl text-[#c9a447] glow-text tracking-wide mb-4">{user?.name || 'Quý Khách'}</h1>
                   <p className="text-sm text-[#a68a61]">
                     Bạn có <span className="text-[#f2e8d5] font-semibold">{upcomingReservations.length} lượt đặt bàn sắp tới</span>
                   </p>
@@ -304,7 +500,12 @@ export default function CustomerPortal({ user, onLogout }) {
               <div className="glass-panel-luxury p-6 rounded-2xl relative">
                 <div className="flex justify-between items-center mb-6 relative z-10">
                   <h3 className="section-title flex items-center gap-2 text-sm"><Sparkles size={16}/> GỢI Ý DÀNH RIÊNG CHO BẠN</h3>
-                  <button className="text-xs text-[#c9a447] hover:text-[#f2e8d5] flex items-center gap-1 transition-colors">Xem tất cả <ArrowRight size={12}/></button>
+                  <button
+                    onClick={() => setShowMenuModal(true)}
+                    className="text-xs text-[#c9a447] hover:text-[#f2e8d5] flex items-center gap-1 transition-colors border border-[#c9a447]/20 hover:border-[#c9a447]/50 px-3 py-1.5 rounded-lg"
+                  >
+                    Xem tất cả <ArrowRight size={12}/>
+                  </button>
                 </div>
                 
                 <div className="flex gap-5 overflow-x-auto no-scrollbar pb-2 relative z-10">
@@ -522,31 +723,154 @@ export default function CustomerPortal({ user, onLogout }) {
               </div>
               
               <div className="glass-panel-luxury p-8 rounded-2xl">
-                {/* Avatar */}
+                {/* Avatar with camera upload */}
                 <div className="flex flex-col items-center mb-8">
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#c9a447] to-[#8c7355] border-4 border-[#c9a447]/30 flex items-center justify-center text-[#070503] font-serif text-3xl shadow-[0_0_30px_rgba(201,164,71,0.3)] mb-3">
-                    {user?.name?.charAt(0) || 'K'}
+                  <div className="relative group mb-3">
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#c9a447] to-[#8c7355] border-4 border-[#c9a447]/30 flex items-center justify-center text-[#070503] font-serif text-3xl shadow-[0_0_30px_rgba(201,164,71,0.3)] overflow-hidden">
+                      {avatarUrl
+                        ? <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" />
+                        : <span>{user?.name?.charAt(0) || 'K'}</span>
+                      }
+                    </div>
+                    {/* Camera icon overlay */}
+                    <button
+                      onClick={() => avatarInputRef.current?.click()}
+                      title="Đổi ảnh đại diện"
+                      className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[#c9a447] border-2 border-[#0e0a06] flex items-center justify-center text-[#070503] hover:bg-[#f2e8d5] transition-colors shadow-lg"
+                    >
+                      <Camera size={13} />
+                    </button>
+                    <input
+                      ref={avatarInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleAvatarChange}
+                    />
                   </div>
                   <h2 className="font-serif text-xl text-[#f2e8d5]">{user?.name}</h2>
                   <span className="text-xs text-[#8c7355] mt-1 bg-[#c9a447]/10 border border-[#c9a447]/20 px-3 py-1 rounded-full">Thành viên Gold</span>
                 </div>
 
-                <div className="space-y-4">
-                  {[
-                    { label: 'Email', value: user?.email, icon: Mail },
-                    { label: 'Số điện thoại', value: user?.phone || 'Chưa cập nhật', icon: Phone },
-                    { label: 'Vai trò', value: 'Khách hàng', icon: User },
-                  ].map((field, i) => (
-                    <div key={i} className="flex items-center gap-4 py-3 border-b border-[#c9a447]/8">
-                      <div className="w-8 h-8 rounded-lg bg-[#c9a447]/10 flex items-center justify-center shrink-0">
-                        <field.icon size={14} className="text-[#c9a447]" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="text-[10px] text-[#7a6040] uppercase tracking-wider">{field.label}</div>
-                        <div className="text-sm text-[#f2e8d5] mt-0.5">{field.value}</div>
-                      </div>
+                <div className="space-y-1">
+                  {/* Email - read only */}
+                  <div className="flex items-center gap-4 py-4 border-b border-[#c9a447]/8">
+                    <div className="w-8 h-8 rounded-lg bg-[#c9a447]/10 flex items-center justify-center shrink-0">
+                      <Mail size={14} className="text-[#c9a447]" />
                     </div>
-                  ))}
+                    <div className="flex-1">
+                      <div className="text-[10px] text-[#7a6040] uppercase tracking-wider">Email</div>
+                      <div className="text-sm text-[#f2e8d5] mt-0.5">{user?.email}</div>
+                    </div>
+                  </div>
+
+                  {/* Phone - editable */}
+                  <div className="flex items-center gap-4 py-4 border-b border-[#c9a447]/8">
+                    <div className="w-8 h-8 rounded-lg bg-[#c9a447]/10 flex items-center justify-center shrink-0">
+                      <Phone size={14} className="text-[#c9a447]" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-[10px] text-[#7a6040] uppercase tracking-wider mb-1">Số điện thoại</div>
+                      {editPhone ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            value={phoneVal}
+                            onChange={e => setPhoneVal(e.target.value)}
+                            placeholder="0901 234 567"
+                            className="flex-1 bg-[#15110d] border border-[#c9a447]/30 rounded-lg px-3 py-1.5 text-sm text-[#f2e8d5] focus:outline-none focus:border-[#c9a447]/60"
+                            autoFocus
+                          />
+                          <button onClick={savePhone} disabled={profileSaving}
+                            className="w-7 h-7 rounded-lg bg-[#c9a447] flex items-center justify-center text-[#070503] hover:bg-[#f2e8d5] transition-colors disabled:opacity-50">
+                            {profileSaving ? <Loader2 size={12} className="animate-spin"/> : <Save size={12}/>}
+                          </button>
+                          <button onClick={() => { setEditPhone(false); setPhoneVal(user?.phone || ''); }}
+                            className="w-7 h-7 rounded-lg border border-[#c9a447]/20 flex items-center justify-center text-[#8c7355] hover:text-[#c9a447] transition-colors">
+                            <X size={12}/>
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-[#f2e8d5]">{user?.phone || 'Chưa cập nhật'}</div>
+                          <button onClick={() => { setEditPhone(true); setPhoneVal(user?.phone || ''); }}
+                            className="w-7 h-7 rounded-lg border border-[#c9a447]/20 flex items-center justify-center text-[#8c7355] hover:text-[#c9a447] hover:border-[#c9a447]/50 transition-colors">
+                            <Edit2 size={12}/>
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Role - read only */}
+                  <div className="flex items-center gap-4 py-4 border-b border-[#c9a447]/8">
+                    <div className="w-8 h-8 rounded-lg bg-[#c9a447]/10 flex items-center justify-center shrink-0">
+                      <User size={14} className="text-[#c9a447]" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-[10px] text-[#7a6040] uppercase tracking-wider">Vai trò</div>
+                      <div className="text-sm text-[#f2e8d5] mt-0.5">Khách hàng</div>
+                    </div>
+                  </div>
+
+                  {/* Bio / Dietary preferences - editable */}
+                  <div className="flex items-start gap-4 py-4">
+                    <div className="w-8 h-8 rounded-lg bg-[#c9a447]/10 flex items-center justify-center shrink-0 mt-0.5">
+                      <FileText size={14} className="text-[#c9a447]" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="text-[10px] text-[#7a6040] uppercase tracking-wider">Mô tả / Sở thích ẩm thực</div>
+                        {!editBio && (
+                          <button onClick={() => { setEditBio(true); setBioVal(user?.bio || ''); }}
+                            className="w-7 h-7 rounded-lg border border-[#c9a447]/20 flex items-center justify-center text-[#8c7355] hover:text-[#c9a447] hover:border-[#c9a447]/50 transition-colors">
+                            <Edit2 size={12}/>
+                          </button>
+                        )}
+                      </div>
+                      {editBio ? (
+                        <div className="space-y-2">
+                          <textarea
+                            value={bioVal}
+                            onChange={e => setBioVal(e.target.value)}
+                            placeholder="VD: Tôi dị ứng hải sản, không ăn được đồ cay, thích món cuộn và sashimi..."
+                            rows={3}
+                            maxLength={500}
+                            className="w-full bg-[#15110d] border border-[#c9a447]/30 rounded-lg px-3 py-2 text-sm text-[#f2e8d5] placeholder-[#5a4a35] focus:outline-none focus:border-[#c9a447]/60 resize-none"
+                            autoFocus
+                          />
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] text-[#5a4a35]">{bioVal.length}/500</span>
+                            <div className="flex gap-2">
+                              <button onClick={() => { setEditBio(false); setBioVal(user?.bio || ''); }}
+                                className="text-xs text-[#8c7355] hover:text-[#c9a447] border border-[#c9a447]/15 px-3 py-1.5 rounded-lg transition-colors">
+                                Hủy
+                              </button>
+                              <button onClick={saveBio} disabled={profileSaving}
+                                className="text-xs bg-[#c9a447] text-[#070503] font-semibold px-3 py-1.5 rounded-lg hover:bg-[#f2e8d5] transition-colors disabled:opacity-50 flex items-center gap-1">
+                                {profileSaving ? <Loader2 size={11} className="animate-spin"/> : <Save size={11}/>}
+                                Lưu
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          {user?.bio ? (
+                            <p className="text-sm text-[#a68a61] leading-relaxed">{user.bio}</p>
+                          ) : (
+                            <p className="text-sm text-[#5a4a35] italic">Thêm mô tả về sở thích ăn uống của bạn để nhân viên phục vụ tốt hơn...</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Info tip */}
+                <div className="mt-4 p-3 bg-[#c9a447]/5 border border-[#c9a447]/10 rounded-xl">
+                  <p className="text-[10px] text-[#7a6040] leading-relaxed">
+                    <span className="text-[#c9a447]">✦</span> Thông tin mô tả sẽ được nhân viên phục vụ tham khảo khi phục vụ bạn, giúp trải nghiệm ẩm thực phù hợp hơn.
+                  </p>
                 </div>
               </div>
             </div>

@@ -22,7 +22,7 @@ const getReservations = async (req, res) => {
 
     const total = await Reservation.countDocuments(filter);
     const reservations = await Reservation.find(filter)
-      .populate('customer', 'name email phone')
+      .populate('customer', 'name email phone bio')
       .populate('table', 'tableNumber capacity area')
       .populate('confirmedBy', 'name role')
       .sort({ reservationDate: 1, reservationTime: 1 })
@@ -85,13 +85,21 @@ const createReservation = async (req, res) => {
     }).distinct('table');
 
     // Find a suitable available table
-    const availableTables = await Table.find({
+    const allTables = await Table.find({
       capacity: { $gte: Number(numberOfGuests) },
     }).sort({ capacity: 1 });
 
-    const assignedTable = availableTables.find(
-      (t) => !reservedTableIds.some((id) => id && id.toString() === t._id.toString())
+    // 1. Prefer tables that are currently available
+    let assignedTable = allTables.find(
+      (t) => t.status === 'available' && !reservedTableIds.some((id) => id && id.toString() === t._id.toString())
     );
+
+    // 2. Fallback to any table that isn't reserved at this time
+    if (!assignedTable) {
+      assignedTable = allTables.find(
+        (t) => !reservedTableIds.some((id) => id && id.toString() === t._id.toString())
+      );
+    }
 
     const reservationData = {
       customerName,
@@ -109,15 +117,39 @@ const createReservation = async (req, res) => {
     }
 
     const reservation = await Reservation.create(reservationData);
+
+    // ponytail: mark table reserved immediately so waiter floor plan is accurate
+    // Only update if it's currently available, so we don't overwrite serving/cleaning states
+    let statusUpdated = false;
+    if (assignedTable && assignedTable.status === 'available') {
+      await Table.findByIdAndUpdate(assignedTable._id, { status: 'reserved' });
+      statusUpdated = true;
+    }
+
     const populated = await reservation.populate([
       { path: 'table', select: 'tableNumber capacity area' },
-      { path: 'customer', select: 'name email' },
+      { path: 'customer', select: 'name email bio' },
     ]);
 
-    // Notify manager/admin in realtime
+    // Notify all connected clients in realtime
     const io = req.app.get('io');
     if (io) {
       io.emit('reservation:new', populated);
+      // ponytail: also push to waiter room for notification badge
+      io.to('waiter').emit('notification:new', {
+        type: 'reservation',
+        icon: '📅',
+        message: `Đặt bàn mới: ${customerName} — ${numberOfGuests} khách lúc ${reservationTime}`,
+        time: new Date(),
+      });
+      if (assignedTable && statusUpdated) {
+        io.emit('table:statusUpdated', {
+          tableId: assignedTable._id,
+          tableNumber: assignedTable.tableNumber,
+          status: 'reserved',
+          table: { ...assignedTable.toObject(), status: 'reserved' },
+        });
+      }
     }
 
     res.status(201).json({

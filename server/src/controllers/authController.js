@@ -111,10 +111,11 @@ const getProfile = async (req, res) => {
 
 const updateProfile = async (req, res) => {
   try {
-    const { name, phone } = req.body;
+    const { name, phone, bio } = req.body;
     const updateData = {};
     if (name) updateData.name = name;
     if (phone !== undefined) updateData.phone = phone;
+    if (bio !== undefined) updateData.bio = bio;
 
     if (req.file) updateData.avatar = `/uploads/${req.file.filename}`;
 

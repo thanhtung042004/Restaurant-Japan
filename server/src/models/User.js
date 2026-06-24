@@ -35,6 +35,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    bio: {
+      type: String,
+      default: '',
+      maxlength: 500,
+    },
     isActive: {
       type: Boolean,
       default: true,

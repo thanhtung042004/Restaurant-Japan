@@ -119,6 +119,13 @@ io.on('connection', (socket) => {
     socket.emit('joined', { room: 'staff' });
   });
 
+  // Waiter-specific room for order/reservation notifications
+  socket.on('join:waiter', () => {
+    socket.join('waiter');
+    console.log(`Socket ${socket.id} joined waiter room`);
+    socket.emit('joined', { room: 'waiter' });
+  });
+
   socket.on('disconnect', (reason) => {
     console.log(`Socket disconnected: ${socket.id} (${reason})`);
   });

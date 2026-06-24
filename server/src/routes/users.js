@@ -11,8 +11,8 @@ const {
 const { protect } = require('../middleware/auth');
 const { authorize } = require('../middleware/role');
 
-// All user management routes require admin role
-router.use(protect, authorize('admin'));
+// All user management routes require admin or manager role
+router.use(protect, authorize('admin', 'manager'));
 
 router.get('/', getUsers);
 router.post('/', createUser);

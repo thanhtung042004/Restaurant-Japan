@@ -145,6 +145,14 @@ const createOrder = async (req, res) => {
     const io = req.app.get('io');
     if (io) {
       io.to('kitchen').emit('order:new', populated);
+      // ponytail: notify waiters about new order from customer
+      io.to('waiter').emit('notification:new', {
+        type: 'order',
+        icon: '🍽️',
+        message: `Bàn ${table.tableNumber} vừa gọi ${enrichedItems.length} món`,
+        time: new Date(),
+      });
+      io.to('waiter').emit('order:new', populated);
       io.emit('table:statusUpdated', {
         tableId,
         tableNumber: table.tableNumber,

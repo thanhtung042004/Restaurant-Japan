@@ -25,7 +25,7 @@ router.get(
   getReservationById
 );
 router.post('/', createReservation); // All authenticated users can book
-router.put('/:id/confirm', authorize('admin', 'manager'), confirmReservation);
+router.put('/:id/confirm', authorize('admin', 'manager', 'waiter'), confirmReservation);
 router.put('/:id/cancel', cancelReservation); // customers cancel own, staff cancel any
 router.put(
   '/:id/status',

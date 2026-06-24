@@ -14,6 +14,7 @@ router.post('/register', register);
 router.post('/login', login);
 router.get('/profile', protect, getProfile);
 router.put('/profile', protect, upload.single('avatar'), updateProfile);
+router.put('/updatedetails', protect, upload.single('avatar'), updateProfile);
 router.put('/change-password', protect, changePassword);
 
 module.exports = router;

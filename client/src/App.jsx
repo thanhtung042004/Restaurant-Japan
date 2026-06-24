@@ -66,6 +66,9 @@ export default function App() {
       if (['admin', 'waiter'].includes(user.role)) {
         newSocket.emit('join:staff');
       }
+      if (user.role === 'waiter') {
+        newSocket.emit('join:waiter');
+      }
     });
 
     setSocket(newSocket);
@@ -136,7 +139,8 @@ export default function App() {
               <DashboardPage 
                 user={user} 
                 socket={socket} 
-                onLogout={handleLogout} 
+                onLogout={handleLogout}
+                onUserUpdate={setUser}
               />
             ) : (
               <Navigate to="/" replace />

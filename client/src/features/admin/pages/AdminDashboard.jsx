@@ -85,6 +85,20 @@ export default function AdminDashboard({ activeTab: propTab, onTabChange: propOn
     try { const res = await userAPI.deleteUser(id); if (res.success) { toast.success('Đã xóa tài khoản'); loadUsers(); } } catch (err) { toast.error(err.message); }
   };
 
+  // Reset password state
+  const [resetTargetId, setResetTargetId] = useState(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [showResetForm, setShowResetForm] = useState(false);
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    if (!newPassword || newPassword.length < 6) { toast.error('Mật khẩu phải có ít nhất 6 ký tự'); return; }
+    try {
+      const res = await userAPI.resetPassword(resetTargetId, { newPassword });
+      if (res.success) { toast.success('Đã đặt lại mật khẩu'); setShowResetForm(false); setResetTargetId(null); setNewPassword(''); }
+    } catch (err) { toast.error(err.message); }
+  };
+
   const totalUsers = users.length;
   const activeUsers = users.filter(u => u.isActive).length;
   const staffCount = users.filter(u => u.role !== 'customer').length;
@@ -177,6 +191,24 @@ export default function AdminDashboard({ activeTab: propTab, onTabChange: propOn
             </form>
           )}
 
+          {/* Reset password form */}
+          {showResetForm && resetTargetId && (
+            <form onSubmit={handleResetPassword} className="glass-panel-luxury p-5 space-y-3 max-w-sm border border-wine/20">
+              <h4 className="section-title flex items-center gap-2"><Key size={13} /> Đặt lại mật khẩu</h4>
+              <div className="relative">
+                <input type={showPassword ? 'text' : 'password'} className="luxury-input pr-10"
+                  placeholder="Mật khẩu mới (≥6 ký tự)" value={newPassword} onChange={e => setNewPassword(e.target.value)} required minLength={6} />
+                <button type="button" onClick={() => setShowPassword(p => !p)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-gold">
+                  {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
+                </button>
+              </div>
+              <div className="flex gap-2 justify-end">
+                <button type="button" onClick={() => { setShowResetForm(false); setNewPassword(''); }} className="btn-ghost">Hủy</button>
+                <button type="submit" className="btn-gold">Xác nhận</button>
+              </div>
+            </form>
+          )}
+
           <div className="glass-panel-luxury overflow-hidden">
             <table className="luxury-table">
               <thead>
@@ -225,6 +257,10 @@ export default function AdminDashboard({ activeTab: propTab, onTabChange: propOn
                         <button onClick={() => { setEditUser(u); setUserName(u.name); setUserEmail(u.email); setUserPhone(u.phone||''); setUserRole(u.role); setShowUserForm(true); }}
                           className="w-7 h-7 rounded border border-gold/15 text-muted hover:text-gold hover:border-gold/30 flex items-center justify-center transition-all" title="Sửa">
                           <Edit size={12} />
+                        </button>
+                        <button onClick={() => { setResetTargetId(u._id); setShowResetForm(true); setShowUserForm(false); }}
+                          className="w-7 h-7 rounded border border-blue-500/15 text-muted hover:text-blue-400 hover:border-blue-500/30 flex items-center justify-center transition-all" title="Đặt lại mật khẩu">
+                          <Key size={12} />
                         </button>
                         <button onClick={() => handleDeleteUser(u._id)}
                           className="w-7 h-7 rounded border border-wine/15 text-muted hover:text-red-400 hover:border-wine/30 flex items-center justify-center transition-all" title="Xóa">
