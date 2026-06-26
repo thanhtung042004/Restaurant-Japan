@@ -63,11 +63,8 @@ export default function App() {
       console.log('Socket.IO connected:', newSocket.id);
       
       // Join specific room based on user role
-      if (['admin', 'waiter'].includes(user.role)) {
+      if (['admin', 'manager'].includes(user.role)) {
         newSocket.emit('join:staff');
-      }
-      if (user.role === 'waiter') {
-        newSocket.emit('join:waiter');
       }
     });
 
@@ -122,14 +119,18 @@ export default function App() {
         <Route 
           path="/" 
           element={
-            <LandingPage 
-              user={user} 
-              onLogout={handleLogout} 
-              onOpenLogin={() => setShowLoginModal(true)} 
-              showLoginModal={showLoginModal}
-              onCloseLogin={() => setShowLoginModal(false)}
-              onLoginSuccess={handleLogin}
-            />
+            user ? (
+              <Navigate to="/dashboard" replace />
+            ) : (
+              <LandingPage 
+                user={user} 
+                onLogout={handleLogout} 
+                onOpenLogin={() => setShowLoginModal(true)} 
+                showLoginModal={showLoginModal}
+                onCloseLogin={() => setShowLoginModal(false)}
+                onLoginSuccess={handleLogin}
+              />
+            )
           } 
         />
         <Route 

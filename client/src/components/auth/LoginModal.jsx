@@ -2,12 +2,6 @@ import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { authAPI } from '../../api';
 
-const QUICK_USERS = [
-  { name: 'Admin', email: 'admin@sakura-japan.com', password: 'admin123', role: 'admin' },
-  { name: 'Phục Vụ', email: 'phucvu@sakura-japan.com', password: 'phucvu123', role: 'waiter' },
-  { name: 'Khách Hàng', email: 'khach@gmail.com', password: 'khach123', role: 'customer' },
-];
-
 export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
   const [isRegister, setIsRegister] = useState(false);
   const [email, setEmail] = useState('');
@@ -30,8 +24,12 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
         }
         const res = await authAPI.register({ name, email, password, phone });
         if (res.success) {
-          toast.success('Đăng ký tài khoản thành công');
+          toast.success('Đăng ký tài khoản thành công! Vui lòng đăng nhập.');
           setIsRegister(false);
+          setEmail(email);
+          setPassword('');
+          setName('');
+          setPhone('');
         }
       } else {
         if (!email || !password) {
@@ -41,27 +39,12 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
         }
         const res = await authAPI.login({ email, password });
         if (res.success) {
-          toast.success(`Chào mừng quay trở lại, ${res.data.name}`);
+          toast.success(`Chào mừng quay trở lại, ${res.data.name}!`);
           onLoginSuccess(res.data.token, res.data);
         }
       }
     } catch (err) {
       toast.error(err.message || 'Hành động thất bại');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleQuickLogin = async (preset) => {
-    setLoading(true);
-    try {
-      const res = await authAPI.login({ email: preset.email, password: preset.password });
-      if (res.success) {
-        toast.success(`Đăng nhập nhanh: ${preset.name}`);
-        onLoginSuccess(res.data.token, res.data);
-      }
-    } catch (err) {
-      toast.error(err.message || 'Đăng nhập nhanh thất bại');
     } finally {
       setLoading(false);
     }
@@ -151,32 +134,16 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }) {
         </form>
 
         {/* Toggle Mode */}
-        <div className="text-center mt-4">
-          <button 
-            onClick={() => setIsRegister(!isRegister)}
-            className="text-xs text-cream-dim hover:text-gold transition-colors underline underline-offset-4"
-          >
-            {isRegister ? 'Đã có tài khoản? Đăng nhập ngay' : 'Chưa có tài khoản? Đăng ký ở đây'}
-          </button>
-        </div>
-
-        {/* Quick Demo Logins */}
-        <div className="mt-6 pt-6 border-t border-gold/10">
-          <p className="block text-[10px] tracking-wider uppercase text-center text-muted mb-3">
-            Đăng nhập nhanh cho demo (Vai trò)
+        <div className="text-center mt-5 pt-5 border-t border-gold/10">
+          <p className="text-xs text-muted mb-2">
+            {isRegister ? 'Đã có tài khoản?' : 'Chưa có tài khoản?'}
           </p>
-          <div className="flex flex-wrap gap-2 justify-center">
-            {QUICK_USERS.map((preset) => (
-              <button 
-                key={preset.role}
-                onClick={() => handleQuickLogin(preset)}
-                disabled={loading}
-                className="px-3 py-1.5 bg-bg border border-gold/10 text-[11px] text-cream-dim hover:text-gold hover:border-gold/40 transition-colors"
-              >
-                {preset.name} ({preset.role})
-              </button>
-            ))}
-          </div>
+          <button 
+            onClick={() => { setIsRegister(!isRegister); setEmail(''); setPassword(''); }}
+            className="text-xs text-gold hover:text-gold/80 transition-colors underline underline-offset-4"
+          >
+            {isRegister ? 'Đăng nhập ngay' : 'Đăng ký miễn phí'}
+          </button>
         </div>
 
       </div>

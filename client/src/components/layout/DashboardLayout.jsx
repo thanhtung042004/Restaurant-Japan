@@ -1,14 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Home, LogOut, Shield, ChevronRight, ChevronLeft,
   LayoutDashboard, Utensils, Table2, Users, FileText,
   BarChart3, BookOpen, Settings, Activity, Bell, Search,
   Flame, ClipboardList, Sparkles, Send, X, Bot,
-  TrendingUp, Calendar, ChevronDown, Menu, CalendarDays
+  TrendingUp, Calendar, ChevronDown, Menu, CalendarDays, UserCog
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { aiAPI } from '../../api';
+
+/* ── Default tab per role ─────────────────────────────── */
+const defaultTabForRole = (role) => {
+  if (role === 'admin') return 'users';
+  if (role === 'waiter') return 'profile';
+  return 'analytics'; // manager and others
+};
 
 /* ── Navigation config per role ───────────────────────── */
 const NAV_MAP = {
@@ -24,14 +31,14 @@ const NAV_MAP = {
     { icon: Table2, label: 'Bàn ăn', tab: 'tables' },
     { icon: CalendarDays, label: 'Đặt bàn', tab: 'reservations' },
     { icon: FileText, label: 'Hóa đơn', tab: 'invoices' },
+    { icon: Users, label: 'Nhân Sự', tab: 'staff' },
     { icon: Sparkles, label: 'Sakura AI', tab: 'ai' },
   ],
   waiter: [
-    { icon: LayoutDashboard, label: 'Trang Chủ', tab: 'home' },
-    { icon: Table2, label: 'Sơ Đồ Bàn', tab: 'floor' },
-    { icon: ClipboardList, label: 'Gọi Món', tab: 'order' },
+    { icon: UserCog, label: 'Hồ Sơ Cá Nhân', tab: 'profile' },
   ],
 };
+
 
 const ROLE_LABELS = {
   admin: 'Quản Trị Hệ Thống',
@@ -216,14 +223,17 @@ export default function DashboardLayout({ user, onLogout, children, activeTab, o
     <div className="flex flex-col h-full">
       {/* Brand */}
       <div className={`border-b border-gold/10 flex items-center ${collapsed ? 'px-0 justify-center h-16' : 'px-5 h-20'} transition-all duration-300`}>
-        <Link to="/" className="flex flex-col items-start select-none group" onClick={() => setMobileOpen(false)}>
+        <button
+          onClick={() => { onTabChange?.(defaultTabForRole(user?.role)); setMobileOpen(false); }}
+          className="flex flex-col items-start select-none group"
+        >
           <span className={`font-serif text-gold font-normal tracking-[0.25em] group-hover:glow-text transition-all ${collapsed ? 'text-sm' : 'text-xl'}`}>
             {collapsed ? 'S' : 'SAKURA'}
           </span>
           {!collapsed && (
             <span className="font-jp text-[8px] text-muted tracking-[0.3em] font-light mt-0.5">桜 日本料理</span>
           )}
-        </Link>
+        </button>
         {!collapsed && (
           <button onClick={() => setCollapsed(true)}
             className="ml-auto text-muted hover:text-gold transition-colors p-1 hidden lg:block">
@@ -255,22 +265,27 @@ export default function DashboardLayout({ user, onLogout, children, activeTab, o
 
       {/* Navigation */}
       <nav className={`flex-1 overflow-y-auto no-scrollbar ${collapsed ? 'p-2 space-y-1' : 'p-3 space-y-0.5'} transition-all`}>
-        {/* ponytail: waiter home is a tab; other roles get a landing page link */}
+        {/* Home button: navigates to the role's default tab, not the landing page */}
         {user?.role !== 'waiter' && !collapsed && (
-          <Link to="/"
-            onClick={() => setMobileOpen(false)}
-            className="nav-item mb-2">
+          <button
+            onClick={() => { onTabChange?.(defaultTabForRole(user?.role)); setMobileOpen(false); }}
+            className="nav-item mb-2 w-full"
+          >
             <Home size={14} className="shrink-0" />
             <span>Trang Chủ</span>
-          </Link>
+          </button>
         )}
         {user?.role !== 'waiter' && collapsed && (
-          <Link to="/" className="nav-item justify-center p-2.5" title="Trang Chủ">
+          <button
+            onClick={() => { onTabChange?.(defaultTabForRole(user?.role)); setMobileOpen(false); }}
+            className="nav-item justify-center p-2.5 w-full"
+            title="Trang Chủ"
+          >
             <Home size={16} />
-          </Link>
+          </button>
         )}
 
-        {!collapsed && navItems.length > 0 && (
+        {!collapsed && navItems.length > 0 && user?.role !== 'waiter' && (
           <div className="text-[8px] text-muted/50 tracking-widest uppercase px-3 py-1.5 mt-1">Menu</div>
         )}
 
