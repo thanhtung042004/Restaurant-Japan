@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { writeLog } = require('../middleware/auditLog');
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -36,6 +37,14 @@ const register = async (req, res) => {
 
     const token = generateToken(user._id);
 
+    await writeLog(req, {
+      action: 'USER_REGISTERED',
+      category: 'USER',
+      severity: 'success',
+      description: `Tài khoản mới: ${user.name} (${user.email})`,
+      after: { name: user.name, email: user.email, role: user.role },
+    });
+
     res.status(201).json({
       success: true,
       message: 'Registration successful.',
@@ -67,6 +76,12 @@ const login = async (req, res) => {
 
     const user = await User.findOne({ email }).select('+password');
     if (!user || !(await user.comparePassword(password))) {
+      await writeLog(req, {
+        action: 'LOGIN_FAILED',
+        category: 'SECURITY',
+        severity: 'warning',
+        description: `Đăng nhập thất bại với email: ${email}`,
+      });
       return res.status(401).json({
         success: false,
         message: 'Invalid email or password.',
@@ -81,6 +96,14 @@ const login = async (req, res) => {
     }
 
     const token = generateToken(user._id);
+
+    await writeLog(req, {
+      action: 'LOGIN_SUCCESS',
+      category: 'SECURITY',
+      severity: 'info',
+      description: `Đăng nhập thành công: ${user.name} (${user.role})`,
+      after: { userId: user._id, role: user.role },
+    });
 
     res.json({
       success: true,

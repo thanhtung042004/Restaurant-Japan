@@ -544,7 +544,7 @@
   50% { opacity: 1; transform: scale(1); }
 }
 @keyframes slideInRight {
-  from { opacity: 0; transform: translateX(20px); }
+  from { opacity: 0; transform: translateX(100%); }
   to { opacity: 1; transform: translateX(0); }
 }
 @keyframes pulseGold {
@@ -560,11 +560,13 @@
 .animate-fade-up { animation: fadeUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
 .animate-slide-right { animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-slide-in-right { animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 .animate-float { animation: float 6s ease-in-out infinite; }
 .animate-glow-pulse { animation: glowPulse 2.5s ease-in-out infinite; }
 .animate-pulse-gold { animation: pulseGold 2s infinite; }
 .animate-kitchen-alert { animation: kitchenAlert 1.5s ease-in-out infinite; }
 .animate-pulse-slow { animation: preloaderPulse 1.8s ease-in-out infinite; }
+.shadow-luxury-lg { box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 40px rgba(201,164,71,0.08); }
 @keyframes bounceDot {
   0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
   40% { transform: scale(1); opacity: 1; }

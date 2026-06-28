@@ -20,6 +20,10 @@ const reservationRoutes = require('./routes/reservations');
 const orderRoutes = require('./routes/orders');
 const invoiceRoutes = require('./routes/invoices');
 const aiRoutes = require('./routes/ai');
+const adminRoutes = require('./routes/admin');
+const logRoutes = require('./routes/logs');
+const settingsRoutes = require('./routes/settings');
+const securityRoutes = require('./routes/security');
 
 connectDB();
 
@@ -68,6 +72,10 @@ app.use('/api/reservations', reservationRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/invoices', invoiceRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/logs', logRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/security', securityRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

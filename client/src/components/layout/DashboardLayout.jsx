@@ -12,7 +12,7 @@ import { aiAPI } from '../../api';
 
 /* ── Default tab per role ─────────────────────────────── */
 const defaultTabForRole = (role) => {
-  if (role === 'admin') return 'users';
+  if (role === 'admin') return 'overview';
   if (role === 'waiter') return 'profile';
   return 'analytics'; // manager and others
 };
@@ -20,10 +20,12 @@ const defaultTabForRole = (role) => {
 /* ── Navigation config per role ───────────────────────── */
 const NAV_MAP = {
   admin: [
-    { icon: Users, label: 'Tài Khoản', tab: 'users' },
-    { icon: Activity, label: 'Nhật Ký', tab: 'logs' },
-    { icon: Settings, label: 'Cấu Hình', tab: 'config' },
-    { icon: BookOpen, label: 'Bảo Mật', tab: 'security' },
+    { icon: LayoutDashboard, label: 'Tổng Quan',  tab: 'overview'  },
+    { icon: Users,           label: 'Tài Khoản',  tab: 'users'     },
+    { icon: BarChart3,       label: 'Thống Kê',   tab: 'analytics' },
+    { icon: ClipboardList,   label: 'Audit Logs', tab: 'audit'     },
+    { icon: Settings,        label: 'Cấu Hình',   tab: 'config'    },
+    { icon: Shield,          label: 'Bảo Mật',    tab: 'security'  },
   ],
   manager: [
     { icon: LayoutDashboard, label: 'Tổng quan', tab: 'analytics' },

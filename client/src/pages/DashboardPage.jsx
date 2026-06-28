@@ -11,7 +11,7 @@ import ManagerDashboard from '../features/manager/pages/ManagerDashboard';
 import WaiterProfile from '../features/waiter/pages/WaiterProfile';
 
 const defaultTab = (role) => {
-  if (role === 'admin') return 'users';
+  if (role === 'admin') return 'overview';
   if (role === 'manager') return 'analytics';
   return 'profile'; // waiter
 };

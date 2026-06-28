@@ -132,4 +132,31 @@ export const aiAPI = {
   getChatHistory: (type) => API.get('/ai/history', { params: { type } }),
 };
 
+// ADMIN ENDPOINTS
+export const adminAPI = {
+  getOverview: () => API.get('/admin/overview'),
+  getStats: () => API.get('/admin/stats'),
+};
+
+// LOG ENDPOINTS
+export const logAPI = {
+  getLogs: (params) => API.get('/logs', { params }),
+};
+
+// SETTINGS ENDPOINTS
+export const settingsAPI = {
+  getSettings: () => API.get('/settings'),
+  updateSetting: (key, value) => API.put(`/settings/${key}`, { value }),
+  updateSettings: (data) => API.put('/settings', data),
+};
+
+// SECURITY ENDPOINTS
+export const securityAPI = {
+  getSessions: () => API.get('/security/sessions'),
+  getAlerts: () => API.get('/security/alerts'),
+  getBlockedIPs: () => API.get('/security/blocked-ips'),
+  blockIP: (ip, reason) => API.post('/security/blocked-ips', { ip, reason }),
+  unblockIP: (ip) => API.delete(`/security/blocked-ips/${encodeURIComponent(ip)}`),
+};
+
 export default API;
